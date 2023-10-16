@@ -1,4 +1,4 @@
-import Pipeline from '@/pipelines/basePipeline.ts';
+import Pipeline from '../basePipeline';
 
 export default class NativePipeline extends Pipeline {
   public loadLocalAsset(asset: string | ArrayBuffer): void {

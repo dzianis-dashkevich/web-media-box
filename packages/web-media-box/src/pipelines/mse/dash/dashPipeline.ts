@@ -1,4 +1,4 @@
-import MsePipeLine from '../msePipeline';
+import MsePipeLine from '@/pipelines/mse/msePipeline.ts';
 
 export default class DashPipeline extends MsePipeLine {
   public loadLocalAsset(asset: string | ArrayBuffer): void {

@@ -20,7 +20,8 @@ import {
   EXT_X_DISCONTINUITY,
   EXT_X_KEY,
   EXT_X_MAP,
-  EXT_X_GAP
+  EXT_X_GAP,
+  EXT_X_BITRATE
 } from './consts/tags.ts';
 import type { ParserOptions } from './types/parserOptions';
 import type { Segment, ParsedPlaylist } from './types/parsedPlaylist';
@@ -33,6 +34,7 @@ import {
   ExtXGap
 } from './tags/emptyTagProcessors.ts';
 import {
+  ExtXBitrate,
   ExtXByteRange,
   ExtInf,
   ExtXDiscontinuitySequence,
@@ -93,6 +95,7 @@ export default function parse(playlist: string, options: ParserOptions = {}): Pa
     [EXT_X_PLAYLIST_TYPE]: new ExtXPlaylistType(warnCallback),
     [EXTINF]: new ExtInf(warnCallback),
     [EXT_X_BYTERANGE]: new ExtXByteRange(warnCallback),
+    [EXT_X_BITRATE]: new ExtXBitrate(warnCallback)
   };
 
   const tagAttributesMap: Record<string, TagWithAttributesProcessor> = {
@@ -149,6 +152,14 @@ export default function parse(playlist: string, options: ParserOptions = {}): Pa
 
   function uriInfoCallback(uri: string): void {
     currentSegment.uri = uri;
+
+    // Apply the EXT-X-BITRATE value from previous segments to this segment as well,
+    // as long as it doesn't have an EXT-X-BYTERANGE tag applied to it.
+    // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.4.8
+    if (parsedPlaylist.currentBitrate && !currentSegment.byteRange) {
+      currentSegment.bitrate = parsedPlaylist.currentBitrate;
+    }
+
     parsedPlaylist.segments.push(currentSegment);
     currentSegment = { ...defaultSegment };
   }

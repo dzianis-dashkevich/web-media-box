@@ -1,4 +1,5 @@
-import scanner from './scanner.ts';
+import createStateMachine from './stateMachine.ts';
+import type { StateMachineTransition } from './stateMachine.ts';
 import { noop } from '../utils/fn.ts';
 import { ignoreTagWarn, missingTagValueWarn, unsupportedTagWarn } from './utils/warn.ts';
 
@@ -21,9 +22,15 @@ import {
   EXT_X_KEY,
   EXT_X_MAP,
   EXT_X_GAP,
-  EXT_X_BITRATE
 } from './consts/tags.ts';
-import type { ParserOptions } from './types/parserOptions';
+import type {
+  CustomTagMap,
+  DebugCallback,
+  ParserOptions,
+  TransformTagAttributes,
+  TransformTagValue,
+  WarnCallback,
+} from './types/parserOptions';
 import type { Segment, ParsedPlaylist } from './types/parsedPlaylist';
 import {
   EmptyTagProcessor,
@@ -31,10 +38,9 @@ import {
   ExtXIframesOnly,
   ExtXIndependentSegments,
   ExtXDiscontinuity,
-  ExtXGap
+  ExtXGap,
 } from './tags/emptyTagProcessors.ts';
 import {
-  ExtXBitrate,
   ExtXByteRange,
   ExtInf,
   ExtXDiscontinuitySequence,
@@ -50,7 +56,7 @@ import {
   ExtXStart,
   TagWithAttributesProcessor,
   ExtXKey,
-  ExtXMap
+  ExtXMap,
 } from './tags/tagWithAttributesProcessors.ts';
 
 const defaultSegment: Segment = {
@@ -60,111 +66,150 @@ const defaultSegment: Segment = {
   uri: '',
 };
 
-export default function parse(playlist: string, options: ParserOptions = {}): ParsedPlaylist {
-  const warnCallback = options.warnCallback || noop;
-  const debugCallback = options.debugCallback || noop;
-  const customTagMap = options.customTagMap || {};
-  const ignoreTags = options.ignoreTags || new Set();
-  const transformTagValue = options.transformTagValue || ((tagKey, tagValue) => tagValue);
-  const transformTagAttributes = options.transformTagAttributes || ((tagKey, tagAttributes) => tagAttributes);
+class Parser {
+  private readonly warnCallback: WarnCallback;
+  private readonly debugCallback: DebugCallback;
+  private readonly customTagMap: CustomTagMap;
+  private readonly ignoreTags: Set<string>;
+  private readonly transformTagValue: TransformTagValue;
+  private readonly transformTagAttributes: TransformTagAttributes;
+  private readonly emptyTagMap: Record<string, EmptyTagProcessor>;
+  private readonly tagValueMap: Record<string, TagWithValueProcessor>;
+  private readonly tagAttributesMap: Record<string, TagWithAttributesProcessor>;
 
-  const parsedPlaylist: ParsedPlaylist = {
-    m3u: false,
-    independentSegments: false,
-    endList: false,
-    iFramesOnly: false,
-    segments: [],
-    custom: {},
-  };
+  protected readonly parsedPlaylist: ParsedPlaylist;
+  protected currentSegment: Segment;
 
-  let currentSegment: Segment = { ...defaultSegment };
+  public constructor(options: ParserOptions) {
+    this.warnCallback = options.warnCallback || noop;
+    this.debugCallback = options.debugCallback || noop;
+    this.customTagMap = options.customTagMap || {};
+    this.ignoreTags = options.ignoreTags || new Set();
+    this.transformTagValue = options.transformTagValue || ((tagKey, tagValue) => tagValue);
+    this.transformTagAttributes = options.transformTagAttributes || ((tagKey, tagAttributes) => tagAttributes);
 
-  const emptyTagMap: Record<string, EmptyTagProcessor> = {
-    [EXT_X_INDEPENDENT_SEGMENTS]: new ExtXIndependentSegments(warnCallback),
-    [EXT_X_ENDLIST]: new ExtXEndList(warnCallback),
-    [EXT_X_I_FRAMES_ONLY]: new ExtXIframesOnly(warnCallback),
-    [EXT_X_DISCONTINUITY]: new ExtXDiscontinuity(warnCallback),
-    [EXT_X_GAP]: new ExtXGap(warnCallback)
-  };
+    this.parsedPlaylist = {
+      m3u: false,
+      independentSegments: false,
+      endList: false,
+      iFramesOnly: false,
+      segments: [],
+      custom: {},
+    };
 
-  const tagValueMap: Record<string, TagWithValueProcessor> = {
-    [EXT_X_VERSION]: new ExtXVersion(warnCallback),
-    [EXT_X_TARGETDURATION]: new ExtXTargetDuration(warnCallback),
-    [EXT_X_MEDIA_SEQUENCE]: new ExtXMediaSequence(warnCallback),
-    [EXT_X_DISCONTINUITY_SEQUENCE]: new ExtXDiscontinuitySequence(warnCallback),
-    [EXT_X_PLAYLIST_TYPE]: new ExtXPlaylistType(warnCallback),
-    [EXTINF]: new ExtInf(warnCallback),
-    [EXT_X_BYTERANGE]: new ExtXByteRange(warnCallback),
-    [EXT_X_BITRATE]: new ExtXBitrate(warnCallback)
-  };
+    this.currentSegment = { ...defaultSegment };
 
-  const tagAttributesMap: Record<string, TagWithAttributesProcessor> = {
-    [EXT_X_START]: new ExtXStart(warnCallback),
-    [EXT_X_PART_INF]: new ExtXPartInf(warnCallback),
-    [EXT_X_SERVER_CONTROL]: new ExtXServerControl(warnCallback),
-    [EXT_X_KEY]: new ExtXKey(warnCallback),
-    [EXT_X_MAP]: new ExtXMap(warnCallback)
-  };
+    this.emptyTagMap = {
+      [EXT_X_INDEPENDENT_SEGMENTS]: new ExtXIndependentSegments(this.warnCallback),
+      [EXT_X_ENDLIST]: new ExtXEndList(this.warnCallback),
+      [EXT_X_I_FRAMES_ONLY]: new ExtXIframesOnly(this.warnCallback),
+      [EXT_X_DISCONTINUITY]: new ExtXDiscontinuity(this.warnCallback),
+      [EXT_X_GAP]: new ExtXGap(this.warnCallback),
+    };
 
-  function tagInfoCallback(tagKey: string, tagValue: string | null, tagAttributes: Record<string, string>): void {
-    debugCallback(`Received tag info from scanner: `, { tagKey, tagValue, tagAttributes });
+    this.tagValueMap = {
+      [EXT_X_VERSION]: new ExtXVersion(this.warnCallback),
+      [EXT_X_TARGETDURATION]: new ExtXTargetDuration(this.warnCallback),
+      [EXT_X_MEDIA_SEQUENCE]: new ExtXMediaSequence(this.warnCallback),
+      [EXT_X_DISCONTINUITY_SEQUENCE]: new ExtXDiscontinuitySequence(this.warnCallback),
+      [EXT_X_PLAYLIST_TYPE]: new ExtXPlaylistType(this.warnCallback),
+      [EXTINF]: new ExtInf(this.warnCallback),
+      [EXT_X_BYTERANGE]: new ExtXByteRange(this.warnCallback),
+    };
 
-    if (ignoreTags.has(tagKey)) {
-      return warnCallback(ignoreTagWarn(tagKey));
+    this.tagAttributesMap = {
+      [EXT_X_START]: new ExtXStart(this.warnCallback),
+      [EXT_X_PART_INF]: new ExtXPartInf(this.warnCallback),
+      [EXT_X_SERVER_CONTROL]: new ExtXServerControl(this.warnCallback),
+      [EXT_X_KEY]: new ExtXKey(this.warnCallback),
+      [EXT_X_MAP]: new ExtXMap(this.warnCallback),
+    };
+  }
+
+  protected readonly tagInfoCallback = (
+    tagKey: string,
+    tagValue: string | null,
+    tagAttributes: Record<string, string>
+  ): void => {
+    this.debugCallback(`Received tag info from scanner: `, { tagKey, tagValue, tagAttributes });
+
+    if (this.ignoreTags.has(tagKey)) {
+      return this.warnCallback(ignoreTagWarn(tagKey));
     }
 
     //1. Process simple tags without values or attributes:
-    if (tagKey in emptyTagMap) {
-      const emptyTagProcessor = emptyTagMap[tagKey];
-      return emptyTagProcessor.process(parsedPlaylist, currentSegment);
+    if (tagKey in this.emptyTagMap) {
+      const emptyTagProcessor = this.emptyTagMap[tagKey];
+      return emptyTagProcessor.process(this.parsedPlaylist, this.currentSegment);
     }
 
     //2. Process tags with values:
-    if (tagKey in tagValueMap) {
-      tagValue = transformTagValue(tagKey, tagValue);
+    if (tagKey in this.tagValueMap) {
+      tagValue = this.transformTagValue(tagKey, tagValue);
 
       if (tagValue === null) {
-        return warnCallback(missingTagValueWarn(tagKey));
+        return this.warnCallback(missingTagValueWarn(tagKey));
       }
 
-      const tagWithValueProcessor = tagValueMap[tagKey];
-      return tagWithValueProcessor.process(tagValue, parsedPlaylist, currentSegment);
+      const tagWithValueProcessor = this.tagValueMap[tagKey];
+      return tagWithValueProcessor.process(tagValue, this.parsedPlaylist, this.currentSegment);
     }
 
     //3. Process tags with attributes:
-    if (tagKey in tagAttributesMap) {
-      tagAttributes = transformTagAttributes(tagKey, tagAttributes);
-      const tagWithAttributesProcessor = tagAttributesMap[tagKey];
+    if (tagKey in this.tagAttributesMap) {
+      tagAttributes = this.transformTagAttributes(tagKey, tagAttributes);
+      const tagWithAttributesProcessor = this.tagAttributesMap[tagKey];
 
-      return tagWithAttributesProcessor.process(tagAttributes, parsedPlaylist);
+      return tagWithAttributesProcessor.process(tagAttributes, this.parsedPlaylist);
     }
 
     //4. Process custom tags:
-    if (tagKey in customTagMap) {
-      const customTagProcessor = customTagMap[tagKey];
+    if (tagKey in this.customTagMap) {
+      const customTagProcessor = this.customTagMap[tagKey];
 
-      return customTagProcessor(tagKey, tagValue, tagAttributes, parsedPlaylist.custom);
+      return customTagProcessor(tagKey, tagValue, tagAttributes, this.parsedPlaylist.custom);
     }
 
     // 5. Unable to process received tag:
-    warnCallback(unsupportedTagWarn(tagKey));
-  }
+    this.warnCallback(unsupportedTagWarn(tagKey));
+  };
 
-  function uriInfoCallback(uri: string): void {
-    currentSegment.uri = uri;
+  protected readonly uriInfoCallback = (uri: string): void => {
+    this.currentSegment.uri = uri;
+    this.parsedPlaylist.segments.push(this.currentSegment);
+    this.currentSegment = { ...defaultSegment };
+  };
+}
 
-    // Apply the EXT-X-BITRATE value from previous segments to this segment as well,
-    // as long as it doesn't have an EXT-X-BYTERANGE tag applied to it.
-    // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.4.8
-    if (parsedPlaylist.currentBitrate && !currentSegment.byteRange) {
-      currentSegment.bitrate = parsedPlaylist.currentBitrate;
+export class FullPlaylistParser extends Parser {
+  public parseFullPlaylist(playlist: string): ParsedPlaylist {
+    const stateMachine = createStateMachine(this.tagInfoCallback, this.uriInfoCallback);
+    const length = playlist.length;
+
+    for (let i = 0; i < length; i++) {
+      stateMachine(playlist[i]);
     }
 
-    parsedPlaylist.segments.push(currentSegment);
-    currentSegment = { ...defaultSegment };
+    return this.parsedPlaylist;
+  }
+}
+
+export class ProgressiveParser extends Parser {
+  private stateMachine: StateMachineTransition | null = null;
+
+  public push(chunk: Uint8Array): void {
+    if (this.stateMachine === null) {
+      this.stateMachine = createStateMachine(this.tagInfoCallback, this.uriInfoCallback);
+    }
+
+    for (let i = 0; i < chunk.length; i++) {
+      this.stateMachine(String.fromCharCode(chunk[i]));
+    }
   }
 
-  scanner(playlist, tagInfoCallback, uriInfoCallback);
+  public done(): ParsedPlaylist {
+    this.stateMachine = null;
 
-  return parsedPlaylist;
+    return this.parsedPlaylist;
+  }
 }

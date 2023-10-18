@@ -159,11 +159,32 @@ export class ExtXProgramDateTime extends TagWithValueProcessor {
 
   public process(tagValue: string, playlist: ParsedPlaylist, currentSegment: Segment): void {
     const timestamp = Date.parse(tagValue);
+    const previousSegment = playlist.segments[playlist.segments.length - 1];
 
     if (Number.isNaN(timestamp)) {
       return this.warnCallback(unableToParseValueWarn(this.tag));
     }
 
-    currentSegment.programDateTime = new Date(timestamp);
+    currentSegment.programDateTime = timestamp;
+
+    // If there are segments preceding this one without a programDateTime, we need to backfill them
+    if (previousSegment && !previousSegment.programDateTime) {
+      this.backfillProgramDateTimes(playlist, currentSegment)
+    }
+  }
+
+  private backfillProgramDateTimes(playlist: ParsedPlaylist, currentSegment: Segment): void {
+    let previousSegmentIndex = playlist.segments.indexOf(currentSegment) - 1;
+
+    // programDateTime is guranteed to be defined if we get here
+    let currentTimestamp = currentSegment.programDateTime!;
+
+    while (previousSegmentIndex >= 0) {
+      const previousSegment = playlist.segments[previousSegmentIndex];
+
+      currentTimestamp -= previousSegment.duration * 1000;
+      previousSegment.programDateTime = currentTimestamp;
+      previousSegmentIndex--;
+    }
   }
 }

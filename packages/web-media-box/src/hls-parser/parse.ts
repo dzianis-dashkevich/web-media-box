@@ -184,6 +184,8 @@ class Parser {
   };
 
   protected readonly uriInfoCallback = (uri: string): void => {
+    const previousSegment = this.parsedPlaylist.segments[this.parsedPlaylist.segments.length - 1];
+
     this.currentSegment.uri = uri;
 
     // TODO: consider using shared private object instead of polluting parsed playlist object, since it is public interface
@@ -192,6 +194,11 @@ class Parser {
     // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.4.8
     if (this.parsedPlaylist.currentBitrate && !this.currentSegment.byteRange) {
       this.currentSegment.bitrate = this.parsedPlaylist.currentBitrate;
+    }
+
+    // Extrapolate a program date time value from the previous segment's program date time
+    if (!this.currentSegment.programDateTime && previousSegment && previousSegment.programDateTime) {
+      this.currentSegment.programDateTime = previousSegment.programDateTime + previousSegment.duration * 1000;
     }
 
     this.parsedPlaylist.segments.push(this.currentSegment);

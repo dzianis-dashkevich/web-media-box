@@ -75,7 +75,49 @@ export default class MseManager {
   }
 
   public removeData(mimeType: string, start: number, end: number = Infinity) {
-    // TODO: Implement removal
+    const bufferWrapper = this.sourceBuffers.get(mimeType);
+    if (bufferWrapper) {
+      const buffer = bufferWrapper.buffer;
+      const queue = bufferWrapper.queue;
+      const operation = (): Promise<void> => {
+        return new Promise((resolve, reject) => {
+          const removeAllEventListeners = () => {
+            buffer.removeEventListener('updateend', updateEnd);
+            buffer.removeEventListener('error', onError);
+            buffer.removeEventListener('abort', onAbort);
+          };
+          const updateEnd = () => {
+            removeAllEventListeners();
+            this.logger.debug(`Remove complete to ${mimeType} SourceBuffer from ${start} to ${end}`);
+            resolve();
+          };
+          const onError = (event: Event) => {
+            removeAllEventListeners();
+            this.logger.warn(`Error ${event} removing data from SourceBuffer of type ${mimeType}`);
+            reject();
+          };
+          const onAbort = (event: Event) => {
+            removeAllEventListeners();
+            this.logger.debug(`Aborted ${event} removing data from SourceBuffer of type ${mimeType}`);
+            reject();
+          }
+          buffer.addEventListener('updateend', updateEnd);
+          buffer.addEventListener('error', onError);
+          buffer.addEventListener('abort', onAbort);
+          try {
+            buffer.remove(start, end);
+          } catch (error) {
+            this.logger.warn(`${error} cannot remove data for ${mimeType} to the SourceBuffer from ${start} to ${end}`);
+          }
+        });
+      }
+      const appendOperation: SourceBufferOperation = {
+        type: OperationType.REMOVE,
+        operation
+      };
+      queue.push(appendOperation);
+      this.processQueue(bufferWrapper);
+    }
   }
 
   public getDuration(): number {

@@ -23,7 +23,7 @@ import {
   EXT_X_MAP,
   EXT_X_GAP,
   EXT_X_BITRATE,
-  EXT_X_PART
+  EXT_X_PART,
 } from './consts/tags.ts';
 import type {
   CustomTagMap,
@@ -31,7 +31,7 @@ import type {
   ParserOptions,
   TransformTagAttributes,
   TransformTagValue,
-  WarnCallback
+  WarnCallback,
 } from './types/parserOptions';
 import type { Segment, ParsedPlaylist } from './types/parsedPlaylist';
 import {
@@ -40,7 +40,7 @@ import {
   ExtXIframesOnly,
   ExtXIndependentSegments,
   ExtXDiscontinuity,
-  ExtXGap
+  ExtXGap,
 } from './tags/emptyTagProcessors.ts';
 import {
   ExtXBitrate,
@@ -51,7 +51,7 @@ import {
   ExtXPlaylistType,
   ExtXTargetDuration,
   ExtXVersion,
-  TagWithValueProcessor
+  TagWithValueProcessor,
 } from './tags/tagWithValueProcessors.ts';
 import {
   ExtXPartInf,
@@ -60,7 +60,7 @@ import {
   TagWithAttributesProcessor,
   ExtXKey,
   ExtXMap,
-  ExtXPart
+  ExtXPart,
 } from './tags/tagWithAttributesProcessors.ts';
 
 const defaultSegment: Segment = {

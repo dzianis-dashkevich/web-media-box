@@ -197,7 +197,7 @@ class Parser {
     }
 
     // Extrapolate a program date time value from the previous segment's program date time
-    if (!this.currentSegment.programDateTime && previousSegment && previousSegment.programDateTime) {
+    if (!this.currentSegment.programDateTime && previousSegment?.programDateTime) {
       this.currentSegment.programDateTime = previousSegment.programDateTime + previousSegment.duration * 1000;
     }
 

@@ -7,5 +7,5 @@ export interface SourceBufferOperation {
 
 export interface SourceBufferWrapper {
   buffer: SourceBuffer;
-  opsQueue: Array<SourceBufferOperation>;
+  queue: Array<SourceBufferOperation>;
 };

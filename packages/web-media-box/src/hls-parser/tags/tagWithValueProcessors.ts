@@ -154,36 +154,6 @@ export class ExtXBitrate extends TagWithValueProcessor {
   }
 }
 
-// export class ExtXProgramDateTime extends TagWithValueProcessor {
-//   protected readonly tag = EXT_X_PROGRAM_DATE_TIME;
-
-//   public process(tagValue: string, playlist: ParsedPlaylist, currentSegment: Segment): void {
-//     const timestamp = Date.parse(tagValue);
-    
-//     if (Number.isNaN(timestamp)) {
-//       return this.warnCallback(unableToParseValueWarn(this.tag));
-//     }
-    
-//     currentSegment.programDateTime = timestamp;
-    
-//     const previousSegment = playlist.segments[playlist.segments.length - 1];
-
-//     // If there are segments preceding this one without a programDateTime, we need to backfill them
-//     if (previousSegment && !previousSegment.programDateTime) {
-//       let previousSegmentIndex = playlist.segments.indexOf(previousSegment);
-//       let currentTimestamp = currentSegment.programDateTime;
-
-//       while (previousSegmentIndex >= 0) {
-//         const previousSegment = playlist.segments[previousSegmentIndex];
-
-//         currentTimestamp -= previousSegment.duration * 1000;
-//         previousSegment.programDateTime = currentTimestamp;
-//         previousSegmentIndex--;
-//       }
-//     }
-//   }
-// }
-
 export class ExtXProgramDateTime extends TagWithValueProcessor {
   protected readonly tag = EXT_X_PROGRAM_DATE_TIME;
 

@@ -2,7 +2,6 @@ import Logger from "@/utils/logger";
 import type { SourceBufferOperation, SourceBufferWrapper } from "./types/bufferOperation";
 import { OperationType } from "./consts/sourceBuffer";
 
-// TODO: Implement SourceBufferWrapper and promise queue logic.
 export default class MseManager {
   private readonly logger: Logger;
   private mediaSource: MediaSource;
@@ -71,8 +70,16 @@ export default class MseManager {
         operation
       };
       queue.push(appendOperation);
-      // TODO: process queue
+      this.processQueue(bufferWrapper);
     }
+  }
+
+  public removeData(mimeType: string, timeRange: TimeRanges) {
+    // TODO: Implement buffer removal
+  }
+
+  public getSource(): string {
+    return URL.createObjectURL(this.mediaSource);
   }
 
   private async initMediaSource(): Promise<void> {

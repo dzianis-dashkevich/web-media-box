@@ -219,8 +219,8 @@ export class ExtXMedia extends TagWithAttributesProcessor {
       autoSelect: parseBoolean(tagAttributes[ExtXMedia.AUTOSELECT], false),
       forced: parseBoolean(tagAttributes[ExtXMedia.FORCED], false),
       inStreamId: tagAttributes[ExtXMedia.INSTREAM_ID],
-      characteristics: tagAttributes[ExtXMedia.CHARACTERISTICS] ? tagAttributes[ExtXMedia.CHARACTERISTICS].split(',') : undefined,
-      channels: tagAttributes[ExtXMedia.CHANNELS] ? tagAttributes[ExtXMedia.CHANNELS].split('/') : undefined
+      characteristics: tagAttributes[ExtXMedia.CHARACTERISTICS] ? tagAttributes[ExtXMedia.CHARACTERISTICS].split(',') : [],
+      channels: tagAttributes[ExtXMedia.CHANNELS] ? tagAttributes[ExtXMedia.CHANNELS].split('/') : []
     };
 
     if (!playlist.alternativeRenditions) {

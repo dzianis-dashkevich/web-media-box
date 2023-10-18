@@ -154,12 +154,41 @@ export class ExtXBitrate extends TagWithValueProcessor {
   }
 }
 
+// export class ExtXProgramDateTime extends TagWithValueProcessor {
+//   protected readonly tag = EXT_X_PROGRAM_DATE_TIME;
+
+//   public process(tagValue: string, playlist: ParsedPlaylist, currentSegment: Segment): void {
+//     const timestamp = Date.parse(tagValue);
+    
+//     if (Number.isNaN(timestamp)) {
+//       return this.warnCallback(unableToParseValueWarn(this.tag));
+//     }
+    
+//     currentSegment.programDateTime = timestamp;
+    
+//     const previousSegment = playlist.segments[playlist.segments.length - 1];
+
+//     // If there are segments preceding this one without a programDateTime, we need to backfill them
+//     if (previousSegment && !previousSegment.programDateTime) {
+//       let previousSegmentIndex = playlist.segments.indexOf(previousSegment);
+//       let currentTimestamp = currentSegment.programDateTime;
+
+//       while (previousSegmentIndex >= 0) {
+//         const previousSegment = playlist.segments[previousSegmentIndex];
+
+//         currentTimestamp -= previousSegment.duration * 1000;
+//         previousSegment.programDateTime = currentTimestamp;
+//         previousSegmentIndex--;
+//       }
+//     }
+//   }
+// }
+
 export class ExtXProgramDateTime extends TagWithValueProcessor {
   protected readonly tag = EXT_X_PROGRAM_DATE_TIME;
 
   public process(tagValue: string, playlist: ParsedPlaylist, currentSegment: Segment): void {
     const timestamp = Date.parse(tagValue);
-    const previousSegment = playlist.segments[playlist.segments.length - 1];
 
     if (Number.isNaN(timestamp)) {
       return this.warnCallback(unableToParseValueWarn(this.tag));
@@ -167,24 +196,23 @@ export class ExtXProgramDateTime extends TagWithValueProcessor {
 
     currentSegment.programDateTime = timestamp;
 
-    // If there are segments preceding this one without a programDateTime, we need to backfill them
-    if (previousSegment && !previousSegment.programDateTime) {
-      this.backfillProgramDateTimes(playlist, currentSegment)
+    // If this is the first segment, abort early
+    if (!playlist.segments.length) {
+      return;
     }
-  }
 
-  private backfillProgramDateTimes(playlist: ParsedPlaylist, currentSegment: Segment): void {
-    let previousSegmentIndex = playlist.segments.indexOf(currentSegment) - 1;
+    const previousSegment = playlist.segments[playlist.segments.length - 1];
 
-    // programDateTime is guranteed to be defined if we get here
-    let currentTimestamp = currentSegment.programDateTime!;
+    // If there are preceding segments without programDateTime, we need to backfill them
+    if (!previousSegment.programDateTime) {
+      let currentTimestamp = currentSegment.programDateTime;
 
-    while (previousSegmentIndex >= 0) {
-      const previousSegment = playlist.segments[previousSegmentIndex];
+      for (let i = playlist.segments.length - 1; i >= 0; i--) {
+        const segment = playlist.segments[i];
 
-      currentTimestamp -= previousSegment.duration * 1000;
-      previousSegment.programDateTime = currentTimestamp;
-      previousSegmentIndex--;
+        currentTimestamp -= segment.duration * 1000;
+        segment.programDateTime = currentTimestamp;
+      }
     }
   }
 }

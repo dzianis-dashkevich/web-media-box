@@ -1,4 +1,4 @@
-import Logger from "@/utils/logger";
+import type Logger from "@/utils/logger";
 import type { SourceBufferOperation, SourceBufferWrapper } from "./types/bufferOperation";
 import { OperationType } from "./consts/sourceBuffer";
 

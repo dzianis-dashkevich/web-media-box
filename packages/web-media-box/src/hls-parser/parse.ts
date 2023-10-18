@@ -24,6 +24,7 @@ import {
   EXT_X_GAP,
   EXT_X_BITRATE,
   EXT_X_PART,
+  EXT_X_PROGRAM_DATE_TIME,
 } from './consts/tags.ts';
 import type {
   CustomTagMap,
@@ -52,6 +53,7 @@ import {
   ExtXTargetDuration,
   ExtXVersion,
   TagWithValueProcessor,
+  ExtXProgramDateTime,
 } from './tags/tagWithValueProcessors.ts';
 import {
   ExtXPartInf,
@@ -119,7 +121,8 @@ class Parser {
       [EXT_X_PLAYLIST_TYPE]: new ExtXPlaylistType(this.warnCallback),
       [EXTINF]: new ExtInf(this.warnCallback),
       [EXT_X_BYTERANGE]: new ExtXByteRange(this.warnCallback),
-      [EXT_X_BITRATE]: new ExtXBitrate(this.warnCallback)
+      [EXT_X_BITRATE]: new ExtXBitrate(this.warnCallback),
+      [EXT_X_PROGRAM_DATE_TIME]: new ExtXProgramDateTime(this.warnCallback),
     };
 
     this.tagAttributesMap = {

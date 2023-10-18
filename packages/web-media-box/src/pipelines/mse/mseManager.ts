@@ -1,5 +1,5 @@
 import Logger from "@/utils/logger";
-import { SourceBufferOperation, SourceBufferWrapper } from "./types/bufferOperation";
+import type { SourceBufferOperation, SourceBufferWrapper } from "./types/bufferOperation";
 import { OperationType } from "./consts/sourceBuffer";
 
 // TODO: Implement SourceBufferWrapper and promise queue logic.
@@ -28,21 +28,37 @@ export default class MseManager {
     });
   }
 
-  public async appendData(mimeType: string, data: ArrayBuffer): Promise<void> {
+  public appendData(mimeType: string, data: ArrayBuffer) {
     const bufferWrapper = this.sourceBuffers.get(mimeType);
     if (bufferWrapper) {
       const buffer = bufferWrapper.buffer;
       const queue = bufferWrapper.queue;
       const operation = (): Promise<void> => {
-        return new Promise((resolve) => {
-          // TODO: handle error/abort/update/updatestart events
-          const updateEnd = () => {
+        return new Promise((resolve, reject) => {
+          const removeAllEventListeners = () => {
             buffer.removeEventListener('updateend', updateEnd);
+            buffer.removeEventListener('error', onError);
+            buffer.removeEventListener('abort', onAbort);
+          };
+          // TODO: handle update/updatestart events
+          const updateEnd = () => {
+            removeAllEventListeners();
             this.logger.debug(`Append complete to ${mimeType} SourceBuffer`);
             resolve();
-            // TODO: Process queue
           };
+          const onError = (event: Event) => {
+            removeAllEventListeners();
+            this.logger.warn(`Error ${event} appending to SourceBuffer of type ${mimeType}`);
+            reject();
+          };
+          const onAbort = (event: Event) => {
+            removeAllEventListeners();
+            this.logger.debug(`Aborted ${event} appending to SourceBuffer of type ${mimeType}`);
+            reject();
+          }
           buffer.addEventListener('updateend', updateEnd);
+          buffer.addEventListener('error', onError);
+          buffer.addEventListener('abort', onAbort);
           try {
             buffer.appendBuffer(data);
           } catch (error) {

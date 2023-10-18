@@ -3,9 +3,7 @@ export type Segment = {
   url: string;
 }
 
-export type Attributes = {
-  [key: string]: unknown;
-}
+export type Attributes = Record<string, unknown>;
 
 export type Representation = {
   id?: string,
@@ -13,7 +11,7 @@ export type Representation = {
   bandwidth?: number,
   initialization?: string,
   segments?: Array<Segment>,
-  attributes?: Attributes,
+  attributes: Attributes,
   [key: string]: unknown;
 }
 

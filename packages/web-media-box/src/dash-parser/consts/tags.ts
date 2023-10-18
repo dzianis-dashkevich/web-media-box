@@ -1,0 +1,11 @@
+export const MPD = 'MPD';
+export const PERIOD = 'PERIOD';
+export const BASEURL = 'BASEURL';
+export const ADAPTIONSET = 'ADAPTIONSET';
+export const SEGMENTTEMPLATE = 'SEGMENTTEMPLATE';
+export const REPRESENTATION = 'REPRESENTATION';
+export const UTCTIMING = 'UTCTIMING';
+
+export const ACCESSIBILITY = 'ACCESSIBILITY';
+export const ROLE = 'ROLE';
+export const AUDIOCHANNELCONFIGURATION = 'AUDIOCHANNELCONFIGURATION';

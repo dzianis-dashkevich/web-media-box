@@ -234,24 +234,17 @@ const parsers: Parsers = {
  * @param el The node to parse attributes from
  * @return Object with all attributes of el parsed
  */
-export const parseAttributes = (node: Node): object => {
-  const el: Element = node as Element;
-
-  interface attributes {
+export const parseAttributes = (attributes:  Record<string, unknown>): Record<string, unknown> => {
+  interface Attrs {
     [key: string]: unknown
   };
 
-  const newAttributes: attributes = {};
+  const newAttributes: Attrs = {};
 
-  if (!(el && el.attributes)) {
-    return {};
-  }
 
-  for (let i = 0; i < el.attributes.length; i++) {
-    const attribute = el.attributes[i];
-
-    const parseFn: (value: string) => string | number = parsers[attribute.name] || parsers.DEFAULT;
-    newAttributes[attribute.name] = parseFn(attribute.value);
+  for (const att in attributes) {
+    const parseFn: (value: string) => string | number = parsers[att] || parsers.DEFAULT;
+    newAttributes[att] = parseFn(attributes[att] as string);
   }
 
   return newAttributes;

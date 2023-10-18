@@ -74,12 +74,28 @@ export default class MseManager {
     }
   }
 
-  public removeData(mimeType: string, timeRange: TimeRanges) {
-    // TODO: Implement buffer removal
+  public removeData(mimeType: string, start: number, end: number = Infinity) {
+    // TODO: Implement removal
+  }
+
+  public getDuration(): number {
+    return this.mediaSource.duration;
+  }
+
+  public setLiveSeekableRange(start: number, end: number) {
+    this.mediaSource.setLiveSeekableRange(start, end);
+  }
+
+  public clearLiveSeekableRange() {
+    this.mediaSource.clearLiveSeekableRange();
   }
 
   public getSource(): string {
     return URL.createObjectURL(this.mediaSource);
+  }
+
+  public endOfStream(reason: EndOfStreamError) {
+    this.mediaSource.endOfStream(reason);
   }
 
   private async initMediaSource(): Promise<void> {
@@ -101,6 +117,10 @@ export default class MseManager {
       }; 
       this.sourceBuffers.set(mimeCodec, wrappedBuffer);
     });
+  }
+
+  private removeSourceBuffer(buffer: SourceBuffer) {
+    this.mediaSource.removeSourceBuffer(buffer);
   }
 
   private processQueue(bufferWrapper: SourceBufferWrapper) {

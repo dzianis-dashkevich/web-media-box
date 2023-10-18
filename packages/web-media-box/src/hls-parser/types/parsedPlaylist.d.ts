@@ -29,18 +29,44 @@ export interface MediaInitializationSection {
 }
 
 export interface ByteRange {
-  from: number;
-  to: number;
+  length: number;
+  offset: number;
+}
+
+export interface PartialSegment {
+  uri: string;
+  duration: number;
+  byteRange?: ByteRange;
+  independent?: boolean;
+  isGap?: boolean;
 }
 
 export interface Segment {
   duration: number;
   title?: string;
+  programDateTime?: number;
   byteRange?: ByteRange;
   bitrate?: number;
   uri: string;
   isDiscontinuity: boolean;
-  isGap: boolean
+  isGap: boolean;
+  parts?: PartialSegment[];
+}
+
+export interface Rendition {
+  type: 'AUDIO' | 'VIDEO' | 'SUBTITLES' | 'CLOSED-CAPTIONS';
+  uri?: string;
+  groupId: string;
+  language?: string;
+  assocLanguage?: string;
+  name: string;
+  stableRenditionId?: string;
+  default: boolean;
+  autoSelect: boolean;
+  forced: boolean;
+  inStreamId?: string;
+  characteristics?: string[];
+  channels?: string[];
 }
 
 export type PlaylistType = 'EVENT' | 'VOD';
@@ -76,6 +102,7 @@ export interface ParsedPlaylist {
   mediaInitializationSection?: MediaInitializationSection;
   segments: Array<Segment>;
   custom: Record<string, unknown>;
+  alternativeRenditions?: Rendition[];
   // Used to persist EXT_X_BITRATE across segments
-  currentBitrate?: number
+  currentBitrate?: number;
 }

@@ -8,7 +8,8 @@ import {
   EXT_X_VERSION,
   EXTINF,
   EXT_X_BYTERANGE,
-  EXT_X_BITRATE
+  EXT_X_BITRATE,
+  EXT_X_PROGRAM_DATE_TIME,
 } from '../consts/tags.ts';
 import { fallbackUsedWarn, unableToParseValueWarn, unsupportedEnumValue } from '../utils/warn.ts';
 
@@ -120,25 +121,19 @@ export class ExtXByteRange extends TagWithValueProcessor {
   public process(tagValue: string, playlist: ParsedPlaylist, currentSegment: Segment): void {
     const values = tagValue.split('@');
     const length = Number(values[0]);
-    const start = values[1] ? Number(values[1]) : undefined;
+    let offset = values[1] ? Number(values[1]) : undefined;
 
-    if (typeof start === 'undefined') {
+    if (typeof offset === 'undefined') {
       const previousSegment = playlist.segments[playlist.segments.length - 1];
 
       if (!previousSegment || !previousSegment.byteRange) {
         return this.warnCallback(`Unable to parse ${this.tag}: EXT-X-BYTERANGE without offset requires a previous segment with a byte range in the playlist`);
       }
 
-      currentSegment.byteRange = {
-        from: previousSegment.byteRange.to + 1,
-        to: previousSegment.byteRange.to + length
-      };
-    } else {
-      currentSegment.byteRange = {
-        from: start,
-        to: start + length - 1
-      };
+      offset = previousSegment.byteRange.offset + previousSegment.byteRange.length + 1;
     }
+
+    currentSegment.byteRange = {length, offset};
   }
 }
 
@@ -156,5 +151,38 @@ export class ExtXBitrate extends TagWithValueProcessor {
 
     // Store on the playlist so the bitrate value can be applied to subsequent segments
     playlist.currentBitrate = bitrate;
+  }
+}
+
+export class ExtXProgramDateTime extends TagWithValueProcessor {
+  protected readonly tag = EXT_X_PROGRAM_DATE_TIME;
+
+  public process(tagValue: string, playlist: ParsedPlaylist, currentSegment: Segment): void {
+    const timestamp = Date.parse(tagValue);
+
+    if (Number.isNaN(timestamp)) {
+      return this.warnCallback(unableToParseValueWarn(this.tag));
+    }
+
+    currentSegment.programDateTime = timestamp;
+
+    // If this is the first segment, abort early
+    if (!playlist.segments.length) {
+      return;
+    }
+
+    const previousSegment = playlist.segments[playlist.segments.length - 1];
+
+    // If there are preceding segments without programDateTime, we need to backfill them
+    if (!previousSegment.programDateTime) {
+      let currentTimestamp = currentSegment.programDateTime;
+
+      for (let i = playlist.segments.length - 1; i >= 0; i--) {
+        const segment = playlist.segments[i];
+
+        currentTimestamp -= segment.duration * 1000;
+        segment.programDateTime = currentTimestamp;
+      }
+    }
   }
 }

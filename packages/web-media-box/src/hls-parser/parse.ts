@@ -23,6 +23,9 @@ import {
   EXT_X_MAP,
   EXT_X_GAP,
   EXT_X_BITRATE,
+  EXT_X_PART,
+  EXT_X_PROGRAM_DATE_TIME,
+  EXT_X_MEDIA,
 } from './consts/tags.ts';
 import type {
   CustomTagMap,
@@ -51,6 +54,7 @@ import {
   ExtXTargetDuration,
   ExtXVersion,
   TagWithValueProcessor,
+  ExtXProgramDateTime,
 } from './tags/tagWithValueProcessors.ts';
 import {
   ExtXPartInf,
@@ -59,6 +63,8 @@ import {
   TagWithAttributesProcessor,
   ExtXKey,
   ExtXMap,
+  ExtXPart,
+  ExtXMedia,
 } from './tags/tagWithAttributesProcessors.ts';
 
 const defaultSegment: Segment = {
@@ -106,7 +112,7 @@ class Parser {
       [EXT_X_ENDLIST]: new ExtXEndList(this.warnCallback),
       [EXT_X_I_FRAMES_ONLY]: new ExtXIframesOnly(this.warnCallback),
       [EXT_X_DISCONTINUITY]: new ExtXDiscontinuity(this.warnCallback),
-      [EXT_X_GAP]: new ExtXGap(this.warnCallback),
+      [EXT_X_GAP]: new ExtXGap(this.warnCallback)
     };
 
     this.tagValueMap = {
@@ -118,6 +124,7 @@ class Parser {
       [EXTINF]: new ExtInf(this.warnCallback),
       [EXT_X_BYTERANGE]: new ExtXByteRange(this.warnCallback),
       [EXT_X_BITRATE]: new ExtXBitrate(this.warnCallback),
+      [EXT_X_PROGRAM_DATE_TIME]: new ExtXProgramDateTime(this.warnCallback),
     };
 
     this.tagAttributesMap = {
@@ -126,6 +133,8 @@ class Parser {
       [EXT_X_SERVER_CONTROL]: new ExtXServerControl(this.warnCallback),
       [EXT_X_KEY]: new ExtXKey(this.warnCallback),
       [EXT_X_MAP]: new ExtXMap(this.warnCallback),
+      [EXT_X_PART]: new ExtXPart(this.warnCallback),
+      [EXT_X_MEDIA]: new ExtXMedia(this.warnCallback),
     };
   }
 
@@ -163,7 +172,7 @@ class Parser {
       tagAttributes = this.transformTagAttributes(tagKey, tagAttributes);
       const tagWithAttributesProcessor = this.tagAttributesMap[tagKey];
 
-      return tagWithAttributesProcessor.process(tagAttributes, this.parsedPlaylist);
+      return tagWithAttributesProcessor.process(tagAttributes, this.parsedPlaylist, this.currentSegment);
     }
 
     //4. Process custom tags:
@@ -178,6 +187,8 @@ class Parser {
   };
 
   protected readonly uriInfoCallback = (uri: string): void => {
+    const previousSegment = this.parsedPlaylist.segments[this.parsedPlaylist.segments.length - 1];
+
     this.currentSegment.uri = uri;
 
     // TODO: consider using shared private object instead of polluting parsed playlist object, since it is public interface
@@ -186,6 +197,11 @@ class Parser {
     // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.4.8
     if (this.parsedPlaylist.currentBitrate && !this.currentSegment.byteRange) {
       this.currentSegment.bitrate = this.parsedPlaylist.currentBitrate;
+    }
+
+    // Extrapolate a program date time value from the previous segment's program date time
+    if (!this.currentSegment.programDateTime && previousSegment?.programDateTime) {
+      this.currentSegment.programDateTime = previousSegment.programDateTime + previousSegment.duration * 1000;
     }
 
     this.parsedPlaylist.segments.push(this.currentSegment);

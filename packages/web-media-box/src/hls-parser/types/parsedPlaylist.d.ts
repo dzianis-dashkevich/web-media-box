@@ -53,8 +53,10 @@ export interface Segment {
   parts?: PartialSegment[];
 }
 
+export type RenditionType = 'AUDIO' | 'VIDEO' | 'SUBTITLES' | 'CLOSED-CAPTIONS';
+
 export interface Rendition {
-  type: 'AUDIO' | 'VIDEO' | 'SUBTITLES' | 'CLOSED-CAPTIONS';
+  type: RenditionType;
   uri?: string;
   groupId: string;
   language?: string;
@@ -69,10 +71,14 @@ export interface Rendition {
   channels?: string[];
 }
 
-export interface RenditionGroup {
-  type: 'AUDIO' | 'VIDEO' | 'SUBTITLES' | 'CLOSED-CAPTIONS';
-  id: string;
-  renditions: Rendition[];
+export type GroupId = string;
+export type RenditionGroup = Array<Rendition>;
+
+export interface RenditionGroups {
+  audio: Record<GroupId, RenditionGroup>;
+  video: Record<GroupId, RenditionGroup>;
+  subtitles: Record<GroupId, RenditionGroup>;
+  closedCaptions: Record<GroupId, RenditionGroup>;
 }
 
 export type PlaylistType = 'EVENT' | 'VOD';
@@ -108,7 +114,7 @@ export interface ParsedPlaylist {
   mediaInitializationSection?: MediaInitializationSection;
   segments: Array<Segment>;
   custom: Record<string, unknown>;
-  renditionGroups?: RenditionGroup[]
+  renditionGroups: RenditionGroups;
   // Used to persist EXT_X_BITRATE across segments
   currentBitrate?: number;
 }

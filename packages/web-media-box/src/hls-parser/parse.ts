@@ -116,6 +116,7 @@ class Parser {
         subtitles: {},
         closedCaptions: {}
       },
+      variantStreams: []
     };
 
     this.currentSegment = { ...defaultSegment };

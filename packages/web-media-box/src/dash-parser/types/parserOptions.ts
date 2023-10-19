@@ -5,6 +5,7 @@ export type TransformTagValue = (tagKey: string, tagValue: string | null) => str
 export type TransformTagAttributes = (tagKey: string, tagAttributes: Record<string, string>) => Record<string, string>;
 
 export interface ParserOptions {
+  uri?: string,
   warnCallback?: WarnCallback;
   debugCallback?: DebugCallback;
   transformTagValue?: TransformTagValue;

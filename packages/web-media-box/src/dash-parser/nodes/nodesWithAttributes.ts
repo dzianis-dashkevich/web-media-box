@@ -11,7 +11,7 @@ import {
 export abstract class NodeWithAttributesProcessor extends NodeProcessor {
   protected abstract readonly expectedAttributes: Array<Attribute>;
 
-  public process(manifest: ParsedManifest, node: Element): void {
+  public process(manifest: ParsedManifest, node: Element, parserState: ParserState): void {
 
     // create attributes from expected attributes
     const atts: Record<string, unknown> = {};

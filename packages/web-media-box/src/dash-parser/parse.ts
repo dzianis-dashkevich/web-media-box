@@ -11,13 +11,17 @@ import {
   NodeWithAttributesProcessor
 } from "./nodes/nodesWithAttributes";
 import { noop } from "../utils/fn";
-import { NodeProcessor } from "./nodes/nodeProcessor";
+
+export interface ParserState {
+  
+}
 
 class Parser {
   // We will keep the state of the iteration here, so we can use information
   // even after we have iterated over a node.
 
   private currentNode: Element;
+  private uri: string;
   private readonly warnCallback: WarnCallback;
   private readonly debugCallback: DebugCallback;
   private readonly nodeProcessorMap: Record<string, NodeWithAttributesProcessor>;
@@ -28,6 +32,7 @@ class Parser {
     this.warnCallback = options.warnCallback || noop;
     this.debugCallback = options.debugCallback || noop;
     this.currentNode = {} as Element;
+    this.uri = options.uri || '';
 
     this.parsedManifest = {
       uri: '',
@@ -88,9 +93,14 @@ class Parser {
   }
 }
 
-
-export default function parse(mpd: string) {
-  const parser = new Parser(mpd, {});
+/**
+ * 
+ * @param mpd The MPD contents in a string
+ * @param uri The manifest base URI
+ * @returns 
+ */
+export default function parse(mpd: string, uri?: string) {
+  const parser = new Parser(mpd, { uri });
 
   return parser.outputManifest();
 }

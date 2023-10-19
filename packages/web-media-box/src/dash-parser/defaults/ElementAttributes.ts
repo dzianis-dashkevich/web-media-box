@@ -26,22 +26,26 @@ export const AdaptationSetAttributes: Array<Attribute> = [
   { name: 'subsegmentAlignment', required: false, default: 'false' },
 ];
 
-// export type PeriodAttributes = {
-//   id?: string,
-//   start?: number,
-// }
+export const PeriodAttributes: Array<Attribute> = [
+  { name: 'id', required: false },
+  { name: 'start', required: false },
+  { name: 'duration', required: false },
+];
 
-// export type AdaptationSetAttributes = {
-//   mimeType: string,
-//   contentType: string,
-//   subsegmentAlignment: string,
-//   subsegmentStartsWithSAP: string,
-//   par: string
-// }
+export const BaseURLAttributes: Array<Attribute> = [
+  { name: 'id', required: true },
+]
 
-// export type BaseURLAttributes = {
-//   serviceLocation?: string,
-// }
+export const RepresentationAttributes: Array<Attribute> = [
+  { name: 'id', required: true },
+  { name: 'bandwidth', required: true },
+  { name: 'codecs', required: false },
+  { name: 'width', required: false },
+  { name: 'height', required: false },
+  { name: 'frameRate', required: false },
+  { name: 'sar', required: false },
+  { name: 'scanType', required: false },
+]
 
 
 

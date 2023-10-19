@@ -6,7 +6,7 @@ describe('dash-parser spec', () => {
   // TODO: create valid tests
   // Should fail, check console for the data
   it('testString should give us JSON', () => {
-    const parsed = parse(testString, '');
+    const parsed = parse(testString, { uri: 'www.example.com'});
     expect(parsed).toBe([]);
   });
 });

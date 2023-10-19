@@ -5,13 +5,15 @@ import { parseAttributes } from '../parseAttributes';
 import {
   MPDAttributes,
   AdaptationSetAttributes,
-  Attribute
+  Attribute,
+  PeriodAttributes,
+  BaseURLAttributes
 } from "../defaults/ElementAttributes";
 
 export abstract class NodeWithAttributesProcessor extends NodeProcessor {
   protected abstract readonly expectedAttributes: Array<Attribute>;
 
-  public process(manifest: ParsedManifest, node: Element, parserState: ParserState): void {
+  public process(manifest: ParsedManifest, node: Element): void {
 
     // create attributes from expected attributes
     const atts: Record<string, unknown> = {};
@@ -46,6 +48,7 @@ export class MPDProcessor extends NodeWithAttributesProcessor {
   protected readonly expectedAttributes = MPDAttributes;
 
   protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
+    // TODO: this currently just shows we are sucessfully updating the parsed manifest.
     manifest.attributes = attributes;
   }
 }
@@ -54,8 +57,30 @@ export class AdaptionSetProcessor extends NodeWithAttributesProcessor {
   protected readonly expectedAttributes = AdaptationSetAttributes;
 
   protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
-    // TODO: manifestattributes = attributes;
+    // TODO
   }
 }
 
-// TODO: all additions to the manifest will be done here.
+export class PeriodProcessor extends NodeWithAttributesProcessor {
+  protected readonly expectedAttributes = PeriodAttributes;
+
+  protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
+    // TODO
+  }
+}
+
+export class BaseURLProcessor extends NodeWithAttributesProcessor {
+  protected readonly expectedAttributes = BaseURLAttributes;
+
+  protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
+    // TODO
+  }
+}
+
+export class RepresentationProcessor extends NodeWithAttributesProcessor {
+  protected readonly expectedAttributes = BaseURLAttributes;
+
+  protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
+    // TODO
+  }
+}

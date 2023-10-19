@@ -34,7 +34,7 @@ export const PeriodAttributes: Array<Attribute> = [
 
 export const BaseURLAttributes: Array<Attribute> = [
   { name: 'id', required: true },
-]
+];
 
 export const RepresentationAttributes: Array<Attribute> = [
   { name: 'id', required: true },
@@ -45,8 +45,4 @@ export const RepresentationAttributes: Array<Attribute> = [
   { name: 'frameRate', required: false },
   { name: 'sar', required: false },
   { name: 'scanType', required: false },
-]
-
-
-
-
+];

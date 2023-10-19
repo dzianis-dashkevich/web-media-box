@@ -26,6 +26,7 @@ import {
   EXT_X_PART,
   EXT_X_PROGRAM_DATE_TIME,
   EXT_X_MEDIA,
+  EXT_X_STREAM_INF,
 } from './consts/tags.ts';
 import type {
   CustomTagMap,
@@ -35,7 +36,7 @@ import type {
   TransformTagValue,
   WarnCallback,
 } from './types/parserOptions';
-import type { Segment, ParsedPlaylist } from './types/parsedPlaylist';
+import type { Segment, ParsedPlaylist, VariantStream } from './types/parsedPlaylist';
 import {
   EmptyTagProcessor,
   ExtXEndList,
@@ -65,6 +66,7 @@ import {
   ExtXMap,
   ExtXPart,
   ExtXMedia,
+  ExtXStreamInf,
 } from './tags/tagWithAttributesProcessors.ts';
 
 const defaultSegment: Segment = {
@@ -72,6 +74,10 @@ const defaultSegment: Segment = {
   isDiscontinuity: false,
   isGap: false,
   uri: '',
+};
+
+const defaultVariantStream: VariantStream = {
+  bandwidth: 0,
 };
 
 class Parser {
@@ -87,6 +93,7 @@ class Parser {
 
   protected readonly parsedPlaylist: ParsedPlaylist;
   protected currentSegment: Segment;
+  protected currentVariantStream: VariantStream;
 
   public constructor(options: ParserOptions) {
     this.warnCallback = options.warnCallback || noop;
@@ -112,6 +119,7 @@ class Parser {
     };
 
     this.currentSegment = { ...defaultSegment };
+    this.currentVariantStream = { ...defaultVariantStream };
 
     this.emptyTagMap = {
       [EXT_X_INDEPENDENT_SEGMENTS]: new ExtXIndependentSegments(this.warnCallback),
@@ -141,6 +149,7 @@ class Parser {
       [EXT_X_MAP]: new ExtXMap(this.warnCallback),
       [EXT_X_PART]: new ExtXPart(this.warnCallback),
       [EXT_X_MEDIA]: new ExtXMedia(this.warnCallback),
+      [EXT_X_STREAM_INF]: new ExtXStreamInf(this.warnCallback),
     };
   }
 
@@ -178,7 +187,7 @@ class Parser {
       tagAttributes = this.transformTagAttributes(tagKey, tagAttributes);
       const tagWithAttributesProcessor = this.tagAttributesMap[tagKey];
 
-      return tagWithAttributesProcessor.process(tagAttributes, this.parsedPlaylist, this.currentSegment);
+      return tagWithAttributesProcessor.process(tagAttributes, this.parsedPlaylist, this.currentSegment, this.currentVariantStream);
     }
 
     //4. Process custom tags:

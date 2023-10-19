@@ -3,17 +3,31 @@ import type { DebugCallback, ParserOptions, WarnCallback } from "./types/parserO
 
 import {
   ADAPTIONSET,
-  MPD
+  MPD,
+  PERIOD,
+  SEGMENTTEMPLATE,
+  REPRESENTATION,
+  UTCTIMING,
+  EVENTSTREAM,
+  EVENT,
+  BASEURL
 } from "./consts/tags";
 import {
   AdaptionSetProcessor,
+  BaseURLProcessor,
+  EventProcessor,
+  EventStreamProcessor,
   MPDProcessor,
-  NodeWithAttributesProcessor
+  NodeWithAttributesProcessor,
+  PeriodProcessor,
+  RepresentationProcessor,
+  SegmentTemplateProcessor,
+  UTCTimingProcessor
 } from "./nodes/nodesWithAttributes";
 import { noop } from "../utils/fn";
 
 export interface ParserState {
-  
+
 }
 
 class Parser {
@@ -42,6 +56,13 @@ class Parser {
     this.nodeProcessorMap = {
       [MPD]: new MPDProcessor(this.warnCallback),
       [ADAPTIONSET]: new AdaptionSetProcessor(this.warnCallback),
+      [PERIOD]: new PeriodProcessor(this.warnCallback),
+      [SEGMENTTEMPLATE]: new SegmentTemplateProcessor(this.warnCallback),
+      [REPRESENTATION]: new RepresentationProcessor(this.warnCallback),
+      [UTCTIMING]: new UTCTimingProcessor(this.warnCallback),
+      [EVENTSTREAM]: new EventStreamProcessor(this.warnCallback),
+      [EVENT]: new EventProcessor(this.warnCallback),
+      [BASEURL]: new BaseURLProcessor(this.warnCallback)
     };
   
     const doc = new DOMParser().parseFromString(mpd, 'text/xml');

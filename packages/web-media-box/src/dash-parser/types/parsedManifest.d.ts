@@ -15,17 +15,22 @@ export type Representation = {
   [key: string]: unknown;
 }
 
-export type AdaptionSet = {
-  mimeType: string,
-  contentType: string,
-  subsegmentAlignment: boolean,
 
+export type EventScheme = {
+  id?: string,
+  schemeIdUri?: string,
+  value: string | number,
+  start: number,
+  end: number,
+  messageData?: string,
+  contentEncoding?: string,
+  presentationTimeOffest?: string | number
 }
 
 export type UTCTimingScheme = {
   schemeIdUri: string,
-  method: string,
-  value: string | number,
+  method?: string,
+  value?: string | number,
   [key: string]: unknown
 }
 
@@ -34,5 +39,6 @@ export interface ParsedManifest {
   representations: Array<Representation>,
   uri: string,
   utcTimingScheme?: UTCTimingScheme,
+  events?: Array<EventScheme>,
   [key: string]: unknown;
 }

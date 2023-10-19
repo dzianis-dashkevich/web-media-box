@@ -46,3 +46,32 @@ export const RepresentationAttributes: Array<Attribute> = [
   { name: 'sar', required: false },
   { name: 'scanType', required: false },
 ];
+
+export const SegmentTemplateAttributes: Array<Attribute> = [
+  { name: 'media', required: false },
+  { name: 'index', required: false },
+  { name: 'initialization', required: false },
+  { name: 'bitstreamSwitching', required: false },
+];
+
+export const UTCTimingAttributes: Array<Attribute> = [
+  { name: 'schemeIdUri', required: true },
+  { name: 'value', required: false },
+];
+
+export const EventStreamAttributes: Array<Attribute> = [
+  { name: 'schemeIdUri', required: true },
+  { name: 'value', required: false },
+  { name: 'xlink:href', required: false },
+  { name: 'xlink:actuate', required: false, default: `onRequest` },
+  { name: 'timescale', required: false },
+  { name: 'presentationTimeOffset', required: false, default: 0 },
+];
+
+export const EventAttributes: Array<Attribute> = [
+  { name: 'presentationTime', required: false, default: 0 },
+  { name: 'id', required: false },
+  { name: 'duration', required: false },
+  { name: 'contentEncoding', required: false },
+  { name: 'messageData', required: false },
+];

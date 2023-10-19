@@ -1,6 +1,4 @@
-import { parseAttributes } from '../parseAttributes';
 import error from './error';
-import { UTCTimingScheme } from '../types/parsedManifest'
 
 /**
  * Parses the manifest for a UTCTiming node, returning the nodes attributes if found
@@ -8,9 +6,7 @@ import { UTCTimingScheme } from '../types/parsedManifest'
  * @param UTCTimingNode string of the MPD manifest
  * @return Attributes of UTCTiming node specified in the manifest. Null if none found
  */
-export const parseUTCTimingScheme = (UTCTimingNode: Node): UTCTimingScheme => {
-  const attributes: UTCTimingScheme = parseAttributes(UTCTimingNode) as UTCTimingScheme;
-
+export const parseUTCTimingScheme = (attributes: Record<string, unknown>): Record<string, unknown> => {
   switch (attributes.schemeIdUri) {
   case 'urn:mpeg:dash:utc:http-head:2014':
   case 'urn:mpeg:dash:utc:http-head:2012':

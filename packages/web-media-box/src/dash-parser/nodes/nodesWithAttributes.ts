@@ -1,13 +1,18 @@
-import type { ParsedManifest } from '../types/parsedManifest';
+import type { EventScheme, ParsedManifest, UTCTimingScheme } from '../types/parsedManifest';
 import { NodeProcessor } from './nodeProcessor';
 import { missingRequiredAttributeWarn } from '../utils/warn';
 import { parseAttributes } from '../parseAttributes';
+import { parseUTCTimingScheme } from '../utils/parseUTCTimingScheme';
 import {
   MPDAttributes,
   AdaptationSetAttributes,
   Attribute,
   PeriodAttributes,
-  BaseURLAttributes
+  BaseURLAttributes,
+  UTCTimingAttributes,
+  EventStreamAttributes,
+  EventAttributes,
+  SegmentTemplateAttributes
 } from "../defaults/ElementAttributes";
 
 export abstract class NodeWithAttributesProcessor extends NodeProcessor {
@@ -82,5 +87,63 @@ export class RepresentationProcessor extends NodeWithAttributesProcessor {
 
   protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
     // TODO
+  }
+}
+
+export class SegmentTemplateProcessor extends NodeWithAttributesProcessor {
+  protected readonly expectedAttributes = SegmentTemplateAttributes;
+
+  protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
+    // TODO
+  }
+}
+
+export class UTCTimingProcessor extends NodeWithAttributesProcessor {
+  protected readonly expectedAttributes = UTCTimingAttributes;
+
+  protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
+    manifest.utcTimingScheme = parseUTCTimingScheme(attributes) as UTCTimingScheme;
+  }
+}
+
+export class EventStreamProcessor extends NodeWithAttributesProcessor {
+  protected readonly expectedAttributes = EventStreamAttributes;
+
+  protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
+    // TODO: We will store event data in the state
+  }
+}
+
+export class EventProcessor extends NodeWithAttributesProcessor {
+  protected readonly expectedAttributes = EventAttributes;
+
+  protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
+    if (!manifest?.events?.length) {
+      manifest.events = [];
+    }
+
+    // TODO: use data from state to finish this.
+
+    // const presentationTime = attributes.presentationTime || 0;
+    const presentationTime = 0;
+    // const timescale = eventStreamAttributes.timescale || 1;
+    const timescale = 1;
+    const duration = attributes.duration as number || 0;
+    // const start = (presentationTime / timescale) + period.attributes.start;
+    const start = 0;
+
+    const event = {
+      schemeIdUri: attributes.schemeIdUri,
+      // value: eventStreamAttributes.value,
+      id: attributes.id,
+      start,
+      end: start + (duration / timescale),
+      // messageData: getContent(event) || eventAttributes.messageData,
+      messageData: attributes.messageData
+      // contentEncoding: eventStreamAttributes.contentEncoding,
+      // presentationTimeOffset: eventStreamAttributes.presentationTimeOffset || 0
+    };
+
+    manifest.events.push(event as EventScheme);
   }
 }

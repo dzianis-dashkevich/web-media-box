@@ -5,6 +5,8 @@ export const ADAPTIONSET = 'ADAPTIONSET';
 export const SEGMENTTEMPLATE = 'SEGMENTTEMPLATE';
 export const REPRESENTATION = 'REPRESENTATION';
 export const UTCTIMING = 'UTCTIMING';
+export const EVENTSTREAM = 'EVENTSTREAM';
+export const EVENT = 'EVENT';
 
 export const ACCESSIBILITY = 'ACCESSIBILITY';
 export const ROLE = 'ROLE';

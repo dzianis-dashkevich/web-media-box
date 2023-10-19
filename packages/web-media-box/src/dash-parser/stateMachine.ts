@@ -132,6 +132,8 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
   };
 }
 
+// TODO: add paren node support
+
 const test = (): void => {
   const stateMachine = createStateMachine((tagName, tagValue, tagAttributes) => {
     // eslint-disable-next-line no-console

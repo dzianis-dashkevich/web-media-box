@@ -61,17 +61,18 @@ export default class MseManager {
     });
   }
 
-  private addSourceBuffer(mimeCodec: string) {
-    this.sourceOpen.then(() => { 
-      const buffer = this.mediaSource.addSourceBuffer(mimeCodec);
-      const wrappedBuffer: SourceBufferWrapper = {
-        buffer,
-        queue: []
-      };
-      // Use the mimetype from the codec string as the key for the source buffer.
-      const mimeType = mimeCodec.substring(0, mimeCodec.indexOf(';')); 
-      this.sourceBuffers.set(mimeType, wrappedBuffer);
-    });
+  private async addSourceBuffer(mimeCodec: string) {
+    // Resolve 'sourceopen' promise before adding source buffers
+    await this.sourceOpen;
+    const buffer = this.mediaSource.addSourceBuffer(mimeCodec);
+    const wrappedBuffer: SourceBufferWrapper = {
+      buffer,
+      queue: [],
+    };
+    // TODO: Is mymeType the best key?
+    // Use the mimeType from the codec string as the key for the source buffer.
+    const mimeType = mimeCodec.substring(0, mimeCodec.indexOf(';'));
+    this.sourceBuffers.set(mimeType, wrappedBuffer);
   }
 
   private removeSourceBuffer(buffer: SourceBuffer) {
@@ -103,7 +104,6 @@ export default class MseManager {
           buffer.removeEventListener('updateend', updateEnd);
           buffer.removeEventListener('error', onError);
         };
-        // TODO: add update/updatestart for debug/logging?
         const updateEnd = () => {
           removeAllEventListeners();
           this.logger.debug(`${type} complete to ${mimeType} SourceBuffer`);

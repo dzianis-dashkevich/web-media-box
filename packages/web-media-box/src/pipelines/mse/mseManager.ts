@@ -1,123 +1,34 @@
 import type Logger from "@/utils/logger";
-import type { SourceBufferOperation, SourceBufferWrapper } from "./types/bufferOperation";
-import { OperationType } from "./consts/sourceBuffer";
+import { OperationType, type SourceBufferWrapper } from "./types/bufferOperation";
 
 export default class MseManager {
   private readonly logger: Logger;
-  private mediaSource: MediaSource;
-  private sourceBuffers: Map<string, SourceBufferWrapper>;
-  private sourceOpen: Promise<void>;
+  //TODO: ManagedMediaSource
+  private readonly mediaSource: MediaSource = new MediaSource();
+  private readonly sourceBuffers: Map<string, SourceBufferWrapper> = new Map();
+  private readonly sourceOpen: Promise<void> = this.initMediaSource();
+  private readonly srcURL: string = URL.createObjectURL(this.mediaSource);
 
   public constructor(logger: Logger) {
     this.logger = logger.createSubLogger('MseManager');
-    //TODO: ManagedMediaSource
-    this.mediaSource = new MediaSource();
-    this.sourceOpen = this.initMediaSource();
-    this.sourceBuffers = new Map();
   }
 
   public initBuffers(mimeCodecs: Array<string>) {
     mimeCodecs.forEach((mimeCodec) => {
       if (MediaSource.isTypeSupported(mimeCodec)) {
-        const mimeType = mimeCodec.substring(0, mimeCodec.indexOf(';'));
-        this.addSourceBuffer(mimeType);
+        this.addSourceBuffer(mimeCodec);
       } else {
-        this.logger.warn(`MediaSource cannot create SourceBuffer for type ${mimeCodec}`);
+        throw new Error(`MediaSource cannot create SourceBuffer for type ${mimeCodec}`);
       }
     });
   }
 
   public appendData(mimeType: string, data: ArrayBuffer) {
-    const bufferWrapper = this.sourceBuffers.get(mimeType);
-    if (bufferWrapper) {
-      const buffer = bufferWrapper.buffer;
-      const queue = bufferWrapper.queue;
-      const operation = (): Promise<void> => {
-        return new Promise((resolve, reject) => {
-          const removeAllEventListeners = () => {
-            buffer.removeEventListener('updateend', updateEnd);
-            buffer.removeEventListener('error', onError);
-            buffer.removeEventListener('abort', onAbort);
-          };
-          // TODO: handle update/updatestart events
-          const updateEnd = () => {
-            removeAllEventListeners();
-            this.logger.debug(`Append complete to ${mimeType} SourceBuffer`);
-            resolve();
-          };
-          const onError = (event: Event) => {
-            removeAllEventListeners();
-            this.logger.warn(`Error ${event} appending to SourceBuffer of type ${mimeType}`);
-            reject();
-          };
-          const onAbort = (event: Event) => {
-            removeAllEventListeners();
-            this.logger.debug(`Aborted ${event} appending to SourceBuffer of type ${mimeType}`);
-            reject();
-          }
-          buffer.addEventListener('updateend', updateEnd);
-          buffer.addEventListener('error', onError);
-          buffer.addEventListener('abort', onAbort);
-          try {
-            buffer.appendBuffer(data);
-          } catch (error) {
-            this.logger.warn(`${error} cannot append data for ${mimeType} to the SourceBuffer`);
-          }
-        });
-      }
-      const appendOperation: SourceBufferOperation = {
-        type: OperationType.APPEND,
-        operation
-      };
-      queue.push(appendOperation);
-      this.processQueue(bufferWrapper);
-    }
+    this.addOperation(mimeType, OperationType.append, (buffer: SourceBuffer) => buffer.appendBuffer(data));
   }
 
   public removeData(mimeType: string, start: number, end: number = Infinity) {
-    const bufferWrapper = this.sourceBuffers.get(mimeType);
-    if (bufferWrapper) {
-      const buffer = bufferWrapper.buffer;
-      const queue = bufferWrapper.queue;
-      const operation = (): Promise<void> => {
-        return new Promise((resolve, reject) => {
-          const removeAllEventListeners = () => {
-            buffer.removeEventListener('updateend', updateEnd);
-            buffer.removeEventListener('error', onError);
-            buffer.removeEventListener('abort', onAbort);
-          };
-          const updateEnd = () => {
-            removeAllEventListeners();
-            this.logger.debug(`Remove complete to ${mimeType} SourceBuffer from ${start} to ${end}`);
-            resolve();
-          };
-          const onError = (event: Event) => {
-            removeAllEventListeners();
-            this.logger.warn(`Error ${event} removing data from SourceBuffer of type ${mimeType}`);
-            reject();
-          };
-          const onAbort = (event: Event) => {
-            removeAllEventListeners();
-            this.logger.debug(`Aborted ${event} removing data from SourceBuffer of type ${mimeType}`);
-            reject();
-          }
-          buffer.addEventListener('updateend', updateEnd);
-          buffer.addEventListener('error', onError);
-          buffer.addEventListener('abort', onAbort);
-          try {
-            buffer.remove(start, end);
-          } catch (error) {
-            this.logger.warn(`${error} cannot remove data for ${mimeType} to the SourceBuffer from ${start} to ${end}`);
-          }
-        });
-      }
-      const appendOperation: SourceBufferOperation = {
-        type: OperationType.REMOVE,
-        operation
-      };
-      queue.push(appendOperation);
-      this.processQueue(bufferWrapper);
-    }
+    this.addOperation(mimeType, OperationType.remove, (buffer: SourceBuffer) => buffer.remove(start, end));
   }
 
   public getDuration(): number {
@@ -133,14 +44,14 @@ export default class MseManager {
   }
 
   public getSource(): string {
-    return URL.createObjectURL(this.mediaSource);
+    return this.srcURL;
   }
 
   public endOfStream(reason: EndOfStreamError) {
     this.mediaSource.endOfStream(reason);
   }
 
-  private async initMediaSource(): Promise<void> {
+  private initMediaSource(): Promise<void> {
     return new Promise((resolve) => {
       const sourceOpen = () => {
         this.mediaSource.removeEventListener('sourceopen', sourceOpen);
@@ -155,9 +66,11 @@ export default class MseManager {
       const buffer = this.mediaSource.addSourceBuffer(mimeCodec);
       const wrappedBuffer: SourceBufferWrapper = {
         buffer,
-        queue: new Array<SourceBufferOperation>()
-      }; 
-      this.sourceBuffers.set(mimeCodec, wrappedBuffer);
+        queue: []
+      };
+      // Use the mimetype from the codec string as the key for the source buffer.
+      const mimeType = mimeCodec.substring(0, mimeCodec.indexOf(';')); 
+      this.sourceBuffers.set(mimeType, wrappedBuffer);
     });
   }
 
@@ -174,5 +87,46 @@ export default class MseManager {
         });
       }
     }
+  }
+
+  private addOperation(mimeType: string, type: OperationType, bufferFn: (buffer: SourceBuffer) => void) {
+    const bufferWrapper = this.sourceBuffers.get(mimeType);
+
+    if (!bufferWrapper) {
+      this.logger.error(`No SourceBuffer for ${mimeType}`);
+      return;
+    }
+    const buffer = bufferWrapper.buffer;
+    const operation = (): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        const removeAllEventListeners = () => {
+          buffer.removeEventListener('updateend', updateEnd);
+          buffer.removeEventListener('error', onError);
+        };
+        // TODO: add update/updatestart for debug/logging?
+        const updateEnd = () => {
+          removeAllEventListeners();
+          this.logger.debug(`${type} complete to ${mimeType} SourceBuffer`);
+          resolve();
+        };
+        const onError = (event: Event) => {
+          removeAllEventListeners();
+          this.logger.warn(`Error ${event} ${type} to SourceBuffer of type ${mimeType}`);
+          reject();
+        };
+        buffer.addEventListener('updateend', updateEnd);
+        buffer.addEventListener('error', onError);
+        try {
+          bufferFn(buffer);
+        } catch (error) {
+          removeAllEventListeners();
+          this.logger.warn(`${error} cannot ${type} data for ${mimeType} to the SourceBuffer`);
+        }
+      });
+    };
+
+    this.logger.debug(`${type} added to ${mimeType} SourceBuffer operation queue`);
+    bufferWrapper.queue.push(operation);
+    this.processQueue(bufferWrapper);
   }
 }

@@ -1,7 +1,7 @@
 import type { WarnCallback } from '@/dash-parser/types/parserOptions';
 import type { TagInfo } from '@/dash-parser/stateMachine.ts';
 import { ADAPTATION_SET, BASE_URL, MPD, PERIOD, REPRESENTATION } from '@/dash-parser/consts/tags.ts';
-import type { ParsedManifest } from '@/dash-parser/types/parsedManifest';
+import type { ManifestType, ParsedManifest } from '@/dash-parser/types/parsedManifest';
 import type { SharedState } from '@/dash-parser/types/sharedState';
 import type { PendingProcessors } from '@/dash-parser/pendingProcessors.ts';
 
@@ -32,6 +32,11 @@ export abstract class TagProcessor {
 }
 
 export class Mpd extends TagProcessor {
+  private static readonly ID = 'id';
+  private static readonly TYPE = 'type';
+  private static readonly AVAILABILITY_START_TIME = 'availabilityStartTime';
+  private static readonly AVAILABILITY_END_TIME = 'availabilityEndTime';
+
   protected readonly tag = MPD;
 
   process(
@@ -40,7 +45,28 @@ export class Mpd extends TagProcessor {
     parsedManifest: ParsedManifest,
     sharedState: SharedState,
     pendingProcessors: PendingProcessors
-  ): void {}
+  ): void {
+    const id = tagInfo.tagAttributes[Mpd.ID];
+    const type = (tagInfo.tagAttributes[Mpd.TYPE] || 'static') as ManifestType;
+    const availabilityStartTime = tagInfo.tagAttributes[Mpd.AVAILABILITY_START_TIME];
+    const availabilityEndTime = tagInfo.tagAttributes[Mpd.AVAILABILITY_END_TIME];
+
+    parsedManifest.type = type as ManifestType;
+
+    if (id) {
+      parsedManifest.id = Number(id);
+    }
+
+    if (availabilityStartTime) {
+      parsedManifest.availabilityStartTime = Date.parse(availabilityStartTime);
+    }
+
+    if (availabilityEndTime) {
+      parsedManifest.availabilityEndTime = Date.parse(availabilityEndTime);
+    }
+
+    //TODO: continue
+  }
 }
 
 export class Period extends TagProcessor {

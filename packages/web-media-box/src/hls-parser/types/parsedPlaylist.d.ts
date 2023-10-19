@@ -69,6 +69,12 @@ export interface Rendition {
   channels?: string[];
 }
 
+export interface RenditionGroup {
+  type: 'AUDIO' | 'VIDEO' | 'SUBTITLES' | 'CLOSED-CAPTIONS';
+  id: string;
+  renditions: Rendition[];
+}
+
 export type PlaylistType = 'EVENT' | 'VOD';
 
 export interface ParsedPlaylist {
@@ -102,7 +108,7 @@ export interface ParsedPlaylist {
   mediaInitializationSection?: MediaInitializationSection;
   segments: Array<Segment>;
   custom: Record<string, unknown>;
-  alternativeRenditions?: Rendition[];
+  renditionGroups?: RenditionGroup[]
   // Used to persist EXT_X_BITRATE across segments
   currentBitrate?: number;
 }

@@ -1,4 +1,4 @@
-import type { ParsedPlaylist, PartialSegment, Segment, Rendition } from '../types/parsedPlaylist';
+import type { ParsedPlaylist, PartialSegment, Segment, Rendition, RenditionGroup } from '../types/parsedPlaylist';
 import { TagProcessor } from './base.ts';
 import { missingRequiredAttributeWarn } from '../utils/warn.ts';
 import { EXT_X_PART_INF, EXT_X_SERVER_CONTROL, EXT_X_START, EXT_X_KEY, EXT_X_MAP, EXT_X_PART, EXT_X_MEDIA } from '../consts/tags.ts';
@@ -223,10 +223,24 @@ export class ExtXMedia extends TagWithAttributesProcessor {
       channels: tagAttributes[ExtXMedia.CHANNELS] ? tagAttributes[ExtXMedia.CHANNELS].split('/') : []
     };
 
-    if (!playlist.alternativeRenditions) {
-      playlist.alternativeRenditions = [];
+    const matchingGroup = playlist.renditionGroups?.find((group) => group.id === rendition.groupId && group.type === rendition.type);
+
+    if (matchingGroup) {
+      matchingGroup.renditions.push(rendition);
+      return;
     }
 
-    playlist.alternativeRenditions.push(rendition);
+    // Create a new group for this rendition
+    const renditionGroup: RenditionGroup = {
+      id: rendition.groupId,
+      type: rendition.type as 'AUDIO' | 'VIDEO' | 'SUBTITLES' | 'CLOSED-CAPTIONS',
+      renditions: [rendition]
+    };
+
+    if (!playlist.renditionGroups) {
+      playlist.renditionGroups = [];
+    }
+
+    playlist.renditionGroups.push(renditionGroup);
   }
 }

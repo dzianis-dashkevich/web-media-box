@@ -7,7 +7,13 @@ const PARSE_TAG_BODY_STATE = 4;
 const PARSE_ATTRIBUTE_VALUE_STATE = 5;
 const PARSE_QUOTED_STRING_ATTRIBUTE_VALUE = 6;
 
-type TagInfoCallback = (tagKey: string, tagValue: string | null, tagAttributes: Record<string, string>) => void;
+export interface TagInfo {
+  tagKey: string;
+  tagValue: string | null;
+  tagAttributes: Record<string, string>;
+}
+
+type TagInfoCallback = (tagInfo: TagInfo, parentTagInfo: TagInfo | null) => void;
 
 export type StateMachineTransition = (char: string) => void;
 

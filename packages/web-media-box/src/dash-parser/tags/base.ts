@@ -25,7 +25,9 @@ export abstract class TagProcessor {
   public processPending(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
-    requiredChildren: Map<string, TagInfo | null>
+    requiredChildren: Map<string, TagInfo | null>,
+    parsedManifest: ParsedManifest,
+    sharedState: SharedState
   ): void {
     // specific processor will override
   }
@@ -47,7 +49,7 @@ export class Mpd extends TagProcessor {
     pendingProcessors: PendingProcessors
   ): void {
     const id = tagInfo.tagAttributes[Mpd.ID];
-    const type = (tagInfo.tagAttributes[Mpd.TYPE] || 'static') as ManifestType;
+    const type = (tagInfo.tagAttributes[Mpd.TYPE] || parsedManifest.type) as ManifestType;
     const availabilityStartTime = tagInfo.tagAttributes[Mpd.AVAILABILITY_START_TIME];
     const availabilityEndTime = tagInfo.tagAttributes[Mpd.AVAILABILITY_END_TIME];
 

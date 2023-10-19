@@ -1,5 +1,3 @@
-import { testString } from '@/dash-parser/examples/mpd.ts';
-
 const PARSE_EMPTY_SPACE_STATE = 1;
 const PARSE_TAG_KEY_STATE = 2;
 const PARSE_ATTRIBUTE_KEY_STATE = 3;
@@ -11,6 +9,7 @@ export interface TagInfo {
   tagKey: string;
   tagValue: string | null;
   tagAttributes: Record<string, string>;
+  hasChildren: boolean;
 }
 
 type TagInfoCallback = (tagInfo: TagInfo, parentTagInfo: TagInfo | null) => void;
@@ -20,31 +19,13 @@ export type StateMachineTransition = (char: string) => void;
 export default function createStateMachine(tagInfoCallback: TagInfoCallback): StateMachineTransition {
   let currentState = PARSE_EMPTY_SPACE_STATE;
 
+  let lastChar: string | null = null;
   let currentTagKey = '';
   let currentTagValue = '';
   let currentAttributeKey = '';
   let currentAttributeValue = '';
+  let hasChildren = true;
   let currentTagAttributeKeyValueMap: Record<string, string> = {};
-
-  // start = parse-empty-space-state
-  // parse-empty-space-state -> parse-tag-name (if encounter '<')
-  // parse-empty-space-state -> parse-empty-space-state (if encounter any char)
-
-  // parse-tag-name -> parse-empty-space-state (if encounter '?') // xml declaration
-  // parse-tag-name -> parse-empty-space-state (if encounter '!') // comment
-  // parse-tag-name -> parse-empty-space-state (if encounter '/') // closing tag
-  // parse-tag-name -> parse-tag-attribute-key (if encounter ' ')
-  // parse-tag-name -> parse-tag-body (if encounter '>')
-  // if encounter new tag name and we have previous value, just expose it and clear internal state
-
-  // parse-tag-attribute-key --> parse-tag-attribute-value (if encounter '=')
-
-  // parse-tag-attribute-value --> parse-tag-attribute-quoted-string-value (if encounter '"')
-
-  // parse-tag-attribute-quoted-string-value -> parse-tag-name (if encounter '"')
-
-  // parse-tag-body --> parse-empty-space-state (if encounter ' ')
-  // parse-tag-body --> parse-tag-name (if encounter '<')
 
   const stateMachine: Record<number, (char: string) => void> = {
     [PARSE_EMPTY_SPACE_STATE]: (char) => {
@@ -52,10 +33,19 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
         currentState = PARSE_TAG_KEY_STATE;
 
         if (currentTagKey) {
-          tagInfoCallback(currentTagKey, currentTagValue || null, currentTagAttributeKeyValueMap);
+          tagInfoCallback(
+            {
+              tagKey: currentTagKey,
+              tagValue: currentTagValue,
+              tagAttributes: currentTagAttributeKeyValueMap,
+              hasChildren,
+            },
+            null
+          ); // TODO: parent
           currentTagKey = '';
           currentTagValue = '';
           currentTagAttributeKeyValueMap = {};
+          hasChildren = true;
         }
       }
     },
@@ -72,6 +62,7 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
 
       if (char === '/') {
         currentState = PARSE_EMPTY_SPACE_STATE;
+        hasChildren = lastChar === '<';
         return;
       }
 
@@ -121,10 +112,19 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
         currentState = PARSE_TAG_KEY_STATE;
 
         if (currentTagKey) {
-          tagInfoCallback(currentTagKey, currentTagValue || null, currentTagAttributeKeyValueMap);
+          tagInfoCallback(
+            {
+              tagKey: currentTagKey,
+              tagValue: currentTagValue,
+              tagAttributes: currentTagAttributeKeyValueMap,
+              hasChildren,
+            },
+            null
+          ); // TODO: parent
           currentTagKey = '';
           currentTagValue = '';
           currentTagAttributeKeyValueMap = {};
+          hasChildren = true;
         }
         return;
       }
@@ -135,20 +135,9 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
 
   return (char: string) => {
     stateMachine[currentState](char);
+    lastChar = char;
   };
 }
 
 // TODO: add paren node support
 
-const test = (): void => {
-  const stateMachine = createStateMachine((tagName, tagValue, tagAttributes) => {
-    // eslint-disable-next-line no-console
-    console.log('tagName: ', tagName, ' tagValue: ', tagValue, ' tagAttributes: ', tagAttributes);
-  });
-
-  for (const char of testString) {
-    stateMachine(char);
-  }
-};
-
-test();

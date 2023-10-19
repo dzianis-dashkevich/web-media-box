@@ -15,8 +15,8 @@ import { TagInfo } from '@/dash-parser/stateMachine.ts';
 import { ignoreTagWarn, unsupportedTagWarn } from '@/dash-parser/utils/warn.ts';
 import createStateMachine from '@/dash-parser/stateMachine.ts';
 import { StateMachineTransition } from '@/dash-parser/stateMachine.ts';
-
-interface ShareState {}
+import { PendingProcessors } from '@/dash-parser/pendingProcessors.ts';
+import type { SharedState } from '@/dash-parser/types/sharedState';
 
 class Parser {
   private readonly warnCallback: WarnCallback;
@@ -28,7 +28,8 @@ class Parser {
   private readonly tagProcessorMap: Record<string, TagProcessor>;
 
   protected readonly parsedManifest: ParsedManifest;
-  protected readonly sharedState: ShareState;
+  protected readonly sharedState: SharedState;
+  protected readonly pendingProcessors: PendingProcessors;
 
   public constructor(options: ParserOptions) {
     this.warnCallback = options.warnCallback || noop;
@@ -45,6 +46,8 @@ class Parser {
     };
 
     this.sharedState = {};
+
+    this.pendingProcessors = new PendingProcessors();
 
     this.tagProcessorMap = {
       [MPD]: new Mpd(this.warnCallback),
@@ -66,7 +69,13 @@ class Parser {
       tagInfo.tagAttributes = this.transformTagAttributes(tagInfo.tagKey, tagInfo.tagAttributes);
 
       const tagProcessor = this.tagProcessorMap[tagInfo.tagKey];
-      return tagProcessor.process(tagInfo, parentTagInfo);
+      return tagProcessor.process(
+        tagInfo,
+        parentTagInfo,
+        this.parsedManifest,
+        this.sharedState,
+        this.pendingProcessors
+      );
     }
 
     if (tagInfo.tagKey in this.customTagMap) {

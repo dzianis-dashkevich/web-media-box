@@ -47,6 +47,15 @@ export default class MseManager {
     return this.srcURL;
   }
 
+  public changeType(mimeCodec: string) {
+    const mimeType = mimeCodec.substring(0, mimeCodec.indexOf(';'));
+    this.sourceBuffers.get(mimeType)?.buffer.changeType(mimeCodec);
+  }
+
+  public buffered(mimeType: string): TimeRanges | undefined {
+    return this.sourceBuffers.get(mimeType)?.buffer.buffered;
+  }
+
   public endOfStream(reason: EndOfStreamError) {
     this.mediaSource.endOfStream(reason);
   }

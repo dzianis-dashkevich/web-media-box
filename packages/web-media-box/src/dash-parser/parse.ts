@@ -1,5 +1,5 @@
 import type { ParsedManifest } from "./types/parsedManifest";
-import { DebugCallback, ParserOptions, WarnCallback } from "./types/parserOptions";
+import type { DebugCallback, ParserOptions, WarnCallback } from "./types/parserOptions";
 
 import {
   ADAPTIONSET,
@@ -7,13 +7,9 @@ import {
 } from "./consts/tags";
 import {
   AdaptionSetProcessor,
-  MPDProcessor
+  MPDProcessor,
+  NodeWithAttributesProcessor
 } from "./nodes/nodesWithAttributes";
-import {
-  MPDAttributes,
-  AdaptationSetAttributes,
-  Attribute
-} from "./defaults/ElementAttributes";
 import { noop } from "../utils/fn";
 import { NodeProcessor } from "./nodes/nodeProcessor";
 
@@ -24,8 +20,7 @@ class Parser {
   private currentNode: Element;
   private readonly warnCallback: WarnCallback;
   private readonly debugCallback: DebugCallback;
-  private readonly nodeProcessorMap: Record<string, NodeProcessor>;
-  private readonly nodeAttributesMap: Record<string, Array<Attribute>>;
+  private readonly nodeProcessorMap: Record<string, NodeWithAttributesProcessor>;
 
   protected readonly parsedManifest: ParsedManifest;
 
@@ -40,13 +35,8 @@ class Parser {
     };
 
     this.nodeProcessorMap = {
-      [MPD]: MPDProcessor,
-      [ADAPTIONSET]: AdaptionSetProcessor,
-    };
-
-    this.nodeAttributesMap = {
-      [MPD]: MPDAttributes,
-      [ADAPTIONSET]: AdaptationSetAttributes,
+      [MPD]: new MPDProcessor(this.warnCallback),
+      [ADAPTIONSET]: new AdaptionSetProcessor(this.warnCallback),
     };
   
     const doc = new DOMParser().parseFromString(mpd, 'text/xml');
@@ -64,23 +54,20 @@ class Parser {
     //   attributes: {}
     // }
 
-    const iterateNode = (node: Node | Element, parentNode: Element | null, attributes?: object, baseUrl?: string): void => {
+    const iterateNode = (node: Node | Element, attributes?: object, baseUrl?: string): void => {
       // Display node name and attributes
       // 1 is equivalent to Node.ELEMENT_NODE
 
       if (node.nodeType == 1) {
         const elementNode = node as Element;
+        this.currentNode = elementNode;
         const name = elementNode.nodeName;
 
 
-        const Processor: NodeProcessor = this.nodeProcessorMap[name];
+        const Processor = this.nodeProcessorMap[name];
 
         if (Processor) {
-          this.currentNode = elementNode;
-          
-          const expectedAttributes = this.nodeAttributesMap[name]
-          const p = new Processor(this.currentNode, expectedAttributes)
-          p.process(this.parsedManifest);
+          Processor.process(this.parsedManifest, this.currentNode);
         }
       } else if (node.nodeType === Node.TEXT_NODE) {
         // Do nothing on text nodes
@@ -88,12 +75,12 @@ class Parser {
 
       // Recursively iterate child nodes
       for (let i = 0; i < node.childNodes.length; i++) {
-        iterateNode(node.childNodes[i], node as Element, attributes);
+        iterateNode(node.childNodes[i], attributes);
       }
     }
 
     // Start iteration from the root node
-    iterateNode(xmlDocument, null);
+    iterateNode(xmlDocument);
   }
 
   public outputManifest = (): ParsedManifest => {

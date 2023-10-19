@@ -2,18 +2,25 @@ import type { ParsedManifest } from '../types/parsedManifest';
 import { NodeProcessor } from './nodeProcessor';
 import { missingRequiredAttributeWarn } from '../utils/warn';
 import { parseAttributes } from '../parseAttributes';
+import {
+  MPDAttributes,
+  AdaptationSetAttributes,
+  Attribute
+} from "../defaults/ElementAttributes";
 
 export abstract class NodeWithAttributesProcessor extends NodeProcessor {
-  public process(manifest: ParsedManifest): void {
+  protected abstract readonly expectedAttributes: Array<Attribute>;
+
+  public process(manifest: ParsedManifest, node: Element): void {
 
     // create attributes from expected attributes
     const atts: Record<string, unknown> = {};
 
     this.expectedAttributes.forEach((attribute) => {
-      const value = this.node.getAttribute(attribute.name);
+      const value = node.getAttribute(attribute.name);
 
-      if (attribute.required && !value) {
-        this.warnCallback(missingRequiredAttributeWarn(this.node.nodeName, attribute.name));
+      if (attribute.required && value == null) {
+        this.warnCallback(missingRequiredAttributeWarn(node.nodeName, attribute.name));
         return;
       }
 
@@ -36,12 +43,16 @@ export abstract class NodeWithAttributesProcessor extends NodeProcessor {
 }
 
 export class MPDProcessor extends NodeWithAttributesProcessor {
+  protected readonly expectedAttributes = MPDAttributes;
+
   protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
     manifest.attributes = attributes;
   }
 }
 
 export class AdaptionSetProcessor extends NodeWithAttributesProcessor {
+  protected readonly expectedAttributes = AdaptationSetAttributes;
+
   protected safeProcess(attributes: Record<string, unknown>, manifest: ParsedManifest): void {
     // TODO: manifestattributes = attributes;
   }

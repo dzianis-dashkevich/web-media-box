@@ -1,1 +1,1 @@
-export { default as parse } from './parse.ts';
+export { default as parse } from './parse';

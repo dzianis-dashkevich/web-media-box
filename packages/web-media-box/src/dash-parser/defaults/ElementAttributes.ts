@@ -24,34 +24,7 @@ export const AdaptationSetAttributes: Array<Attribute> = [
   { name: 'mimeType', required: true },
   { name: 'contentType', required: true },
   { name: 'subsegmentAlignment', required: false, default: 'false' },
-]
-
-// export const MPDAttributes = {
-//   id?: string,
-//   profiles: string,
-//   type: string,
-//   availabilityStartTime?: number,
-//   publishTime?: string,
-//   mediaPresentationDuration: number,
-//   minBufferTime: string,
-//   xmlns?: string,
-//   'xmlns:xsi'?: string,
-//   'xsi:schemaLocation'?: string
-// }
-
-// export const MPDAttributes = {
-//   id?: string,
-//   profiles: string,
-//   type: string,
-//   availabilityStartTime?: number,
-//   publishTime?: string,
-//   availabilityStartTime: string,
-//   mediaPresentationDuration: number,
-//   minBufferTime: string,
-//   xmlns?: string,
-//   'xmlns:xsi'?: string,
-//   'xsi:schemaLocation'?: string
-// }
+];
 
 // export type PeriodAttributes = {
 //   id?: string,

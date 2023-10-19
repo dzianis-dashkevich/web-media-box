@@ -241,7 +241,6 @@ export const parseAttributes = (attributes:  Record<string, unknown>): Record<st
 
   const newAttributes: Attrs = {};
 
-
   for (const att in attributes) {
     const parseFn: (value: string) => string | number = parsers[att] || parsers.DEFAULT;
     newAttributes[att] = parseFn(attributes[att] as string);

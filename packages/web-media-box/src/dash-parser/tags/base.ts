@@ -1,6 +1,15 @@
 import type { WarnCallback } from '@/dash-parser/types/parserOptions';
 import type { TagInfo } from '@/dash-parser/stateMachine.ts';
-import { ADAPTATION_SET, BASE_URL, MPD, PERIOD, REPRESENTATION } from '@/dash-parser/consts/tags.ts';
+import {
+  ADAPTATION_SET,
+  BASE_URL,
+  MPD,
+  PERIOD,
+  REPRESENTATION,
+  UTC_TIMING,
+  EVENT_STREAM,
+  EVENT }
+from '@/dash-parser/consts/tags.ts';
 import type { ManifestType, ParsedManifest } from '@/dash-parser/types/parsedManifest';
 import type { SharedState } from '@/dash-parser/types/sharedState';
 import type { PendingProcessors } from '@/dash-parser/pendingProcessors.ts';
@@ -81,24 +90,14 @@ export abstract class TagProcessor {
 }
 
 export class Mpd extends TagProcessor {
-  private static readonly ID = 'id';
-  private static readonly TYPE = 'type';
-  private static readonly AVAILABILITY_START_TIME = 'availabilityStartTime';
-  private static readonly AVAILABILITY_END_TIME = 'availabilityEndTime';
-
   protected readonly tag = MPD;
 
   process(
     tagInfo: TagInfo,
-    parentTagInfo: TagInfo | null,
-    parsedManifest: ParsedManifest,
     sharedState: SharedState,
-    pendingProcessors: PendingProcessors
   ): void {
-    const attributes = formatAttributes(tagInfo.tagAttributes, MPDAttributes);
+    const attributes = formatAttributes(tagInfo.tagAttributes, MPDAttributes, tagInfo.tagName);
     sharedState.attributes = attributes;
-
-    //TODO: continue
   }
 }
 
@@ -149,3 +148,73 @@ export class Representation extends TagProcessor {
     pendingProcessors: PendingProcessors
   ): void {}
 }
+
+export class UTCTiming extends TagProcessor {
+  protected readonly tag = UTC_TIMING;
+
+  process(
+    tagInfo: TagInfo,
+    parsedManifest: ParsedManifest,
+  ): void {
+    const attributes = formatAttributes(tagInfo.tagAttributes, UTCTimingAttributes, tagInfo.tagName);
+    parsedManifest.utcTimingScheme = attributes;
+  }
+}
+
+export class EventStream extends TagProcessor {
+  protected readonly tag = EVENT_STREAM;
+
+  process(
+    tagInfo: TagInfo,
+    parentTagInfo: TagInfo | null,
+    parsedManifest: ParsedManifest,
+    sharedState: SharedState,
+    pendingProcessors: PendingProcessors
+  ): void {
+    
+  }
+}
+
+export class Event extends TagProcessor {
+  protected readonly tag = EVENT;
+
+  process(
+    tagInfo: TagInfo,
+    parentTagInfo: TagInfo | null,
+    parsedManifest: ParsedManifest,
+    sharedState: SharedState,
+    pendingProcessors: PendingProcessors
+  ): void {
+    const attributes = formatAttributes(tagInfo.tagAttributes, EventAttributes, tagInfo.tagName);
+
+    if (parsedManifest.events?.length) {
+      parsedManifest.events = [];
+    }
+
+    // TODO: use data from state to finish this.
+
+    // const presentationTime = attributes.presentationTime || 0;
+    const presentationTime = 0;
+    // const timescale = eventStreamAttributes.timescale || 1;
+    const timescale = 1;
+    const duration = attributes.duration as number || 0;
+    // const start = (presentationTime / timescale) + period.attributes.start;
+    const start = 0;
+
+    const event = {
+      schemeIdUri: attributes.schemeIdUri,
+      // value: eventStreamAttributes.value,
+      id: attributes.id,
+      start,
+      end: start + (duration / timescale),
+      // messageData: getContent(event) || eventAttributes.messageData,
+      messageData: attributes.messageData
+      // contentEncoding: eventStreamAttributes.contentEncoding,
+      // presentationTimeOffset: eventStreamAttributes.presentationTimeOffset || 0
+    };
+
+    parsedManifest.events.push(event as EventScheme);
+  }
+}
+
+

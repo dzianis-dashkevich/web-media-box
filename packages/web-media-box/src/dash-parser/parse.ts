@@ -9,8 +9,22 @@ import type {
 import { noop } from '../utils/fn.ts';
 import { ParsedManifest } from '@/dash-parser/types/parsedManifest';
 import type { TagProcessor } from '@/dash-parser/tags/base.ts';
-import { ADAPTATION_SET, MPD, PERIOD, REPRESENTATION } from '@/dash-parser/consts/tags.ts';
-import { AdaptationSet, Mpd, Period, Representation } from '@/dash-parser/tags/base.ts';
+import {
+  ADAPTATION_SET,
+  MPD,
+  PERIOD,
+  REPRESENTATION,
+  UTC_TIMING,
+  EVENT_STREAM,
+  EVENT,
+  BASE_URL
+} from '@/dash-parser/consts/tags.ts';
+import {
+  AdaptationSet,
+  Mpd,
+  Period,
+  Representation
+} from '@/dash-parser/tags/base.ts';
 import { TagInfo } from '@/dash-parser/stateMachine.ts';
 import { ignoreTagWarn, unsupportedTagWarn } from '@/dash-parser/utils/warn.ts';
 import createStateMachine from '@/dash-parser/stateMachine.ts';

@@ -4,6 +4,55 @@ import { ADAPTATION_SET, BASE_URL, MPD, PERIOD, REPRESENTATION } from '@/dash-pa
 import type { ManifestType, ParsedManifest } from '@/dash-parser/types/parsedManifest';
 import type { SharedState } from '@/dash-parser/types/sharedState';
 import type { PendingProcessors } from '@/dash-parser/pendingProcessors.ts';
+import type { EventScheme, ParsedManifest, UTCTimingScheme } from '../types/parsedManifest';
+import { missingRequiredAttributeWarn } from '@/dash-parser/utils/warn.ts';
+import { parseAttributes } from '@/dash-parser/parseAttributes';
+import { parseUTCTimingScheme } from '@/dash-parser/utils/parseUTCTimingScheme';
+import {
+  MPDAttributes,
+  AdaptationSetAttributes,
+  Attribute,
+  PeriodAttributes,
+  BaseURLAttributes,
+  UTCTimingAttributes,
+  EventStreamAttributes,
+  EventAttributes,
+  SegmentTemplateAttributes
+} from '@/dash-parser/consts/attributes.ts';
+
+/**
+ * 
+ * @param attributes The list of attributes taken from the tag
+ * @param expectedAttributes The expected attributes based on the DASH spec
+ * @returns A parsed and formatted list attributes.
+ */
+const formatAttributes = (
+  attributes: Record<string, unknown>,
+  expectedAttributes: Array<Attribute>,
+  tagName: string
+  ):Record<string, unknown> => {
+  const atts: Record<string, unknown> = {};
+
+  expectedAttributes.forEach((expected) => {
+    const value = attributes[expected.name];
+
+    if (expected.required && value == null) {
+      missingRequiredAttributeWarn(tagName, expected.name);
+      return;
+    }
+
+    if (value == null && expected.default) {
+      atts[expected.name] = expected.default;
+    }
+
+    if (value) {
+      atts[expected.name] = value;
+    }
+  })
+
+  // Format the retrieved attributes
+  return parseAttributes(atts);
+}
 
 export abstract class TagProcessor {
   protected readonly warnCallback: WarnCallback;
@@ -46,24 +95,8 @@ export class Mpd extends TagProcessor {
     sharedState: SharedState,
     pendingProcessors: PendingProcessors
   ): void {
-    const id = tagInfo.tagAttributes[Mpd.ID];
-    const type = (tagInfo.tagAttributes[Mpd.TYPE] || 'static') as ManifestType;
-    const availabilityStartTime = tagInfo.tagAttributes[Mpd.AVAILABILITY_START_TIME];
-    const availabilityEndTime = tagInfo.tagAttributes[Mpd.AVAILABILITY_END_TIME];
-
-    parsedManifest.type = type as ManifestType;
-
-    if (id) {
-      parsedManifest.id = Number(id);
-    }
-
-    if (availabilityStartTime) {
-      parsedManifest.availabilityStartTime = Date.parse(availabilityStartTime);
-    }
-
-    if (availabilityEndTime) {
-      parsedManifest.availabilityEndTime = Date.parse(availabilityEndTime);
-    }
+    const attributes = formatAttributes(tagInfo.tagAttributes, MPDAttributes);
+    sharedState.attributes = attributes;
 
     //TODO: continue
   }

@@ -1,8 +1,12 @@
+import { FullManifestParser } from '@/dash-parser/parse';
+import { testMPD } from './examples/mpd';
 import { describe, it, expect } from 'bun:test';
 
 describe('dash-parser spec', () => {
   // TODO: create valid tests
-  it('mock spec', () => {
-    expect(true).toBe(true);
+  it('testString should give us JSON', () => {
+    const p = new FullManifestParser({});
+    const parsed = p.parseFullPlaylist(testMPD);
+    expect(parsed).toBe(0);
   });
 });

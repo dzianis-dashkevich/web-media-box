@@ -123,7 +123,7 @@ class Parser {
         closedCaptions: {},
       },
       variantStreams: [],
-      iFramePlaylists: []
+      iFramePlaylists: [],
     };
 
     this.sharedState = {

@@ -148,9 +148,7 @@ export interface ParsedPlaylist {
   segments: Array<Segment>;
   custom: Record<string, unknown>;
   renditionGroups: RenditionGroups;
-  variantStreams: Array<VariantStream>
-  // Used to persist EXT_X_BITRATE across segments
-  currentBitrate?: number;
+  variantStreams: Array<VariantStream>;
   // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.5.2
-  skip?: Skip
+  skip?: Skip;
 }

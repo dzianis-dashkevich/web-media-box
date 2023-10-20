@@ -38,7 +38,7 @@ import type {
   WarnCallback,
 } from './types/parserOptions';
 import type { Segment, ParsedPlaylist, VariantStream } from './types/parsedPlaylist';
-import type { SharedPrivateState } from './types/sharedState';
+import type { SharedState } from './types/sharedState';
 import {
   EmptyTagProcessor,
   ExtXEndList,
@@ -84,12 +84,6 @@ const defaultVariantStream: VariantStream = {
   uri: '',
 };
 
-const sharedState: SharedPrivateState = {
-  isMultivariantPlaylist: false,
-  currentSegment: {  ...defaultSegment },
-  currentVariant: { ...defaultVariantStream },
-};
-
 class Parser {
   private readonly warnCallback: WarnCallback;
   private readonly debugCallback: DebugCallback;
@@ -102,7 +96,7 @@ class Parser {
   private readonly tagAttributesMap: Record<string, TagWithAttributesProcessor>;
 
   protected readonly parsedPlaylist: ParsedPlaylist;
-  protected sharedState: SharedPrivateState;
+  protected sharedState: SharedState;
 
   public constructor(options: ParserOptions) {
     this.warnCallback = options.warnCallback || noop;
@@ -129,7 +123,11 @@ class Parser {
       variantStreams: []
     };
 
-    this.sharedState = sharedState;
+    this.sharedState = {
+      isMultivariantPlaylist: false,
+      currentSegment: { ...defaultSegment },
+      currentVariant: { ...defaultVariantStream },
+    } as SharedState;
 
     this.emptyTagMap = {
       [EXT_X_INDEPENDENT_SEGMENTS]: new ExtXIndependentSegments(this.warnCallback),
@@ -205,7 +203,7 @@ class Parser {
     if (tagKey in this.customTagMap) {
       const customTagProcessor = this.customTagMap[tagKey];
 
-      return customTagProcessor(tagKey, tagValue, tagAttributes, this.parsedPlaylist.custom);
+      return customTagProcessor(tagKey, tagValue, tagAttributes, this.parsedPlaylist.custom, this.sharedState);
     }
 
     // 5. Unable to process received tag:

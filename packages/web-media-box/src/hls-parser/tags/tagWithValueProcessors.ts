@@ -1,5 +1,5 @@
 import type { ParsedPlaylist, PlaylistType } from '../types/parsedPlaylist';
-import type { SharedPrivateState } from '../types/sharedState';
+import type { SharedState } from '../types/sharedState';
 import { TagProcessor } from './base.ts';
 import {
   EXT_X_DISCONTINUITY_SEQUENCE,
@@ -15,13 +15,13 @@ import {
 import { fallbackUsedWarn, unableToParseValueWarn, unsupportedEnumValue } from '../utils/warn.ts';
 
 export abstract class TagWithValueProcessor extends TagProcessor {
-  public abstract process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedPrivateState): void;
+  public abstract process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedState): void;
 }
 
 abstract class TagWithNumberValueProcessor extends TagWithValueProcessor {
   protected readonly fallback: number | undefined;
 
-  public process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedPrivateState): void {
+  public process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedState): void {
     let parsed = Number(tagValue);
 
     if (Number.isNaN(parsed)) {
@@ -36,7 +36,7 @@ abstract class TagWithNumberValueProcessor extends TagWithValueProcessor {
     return this.processNumberValue(parsed, playlist, sharedState);
   }
 
-  protected abstract processNumberValue(value: number, playlist: ParsedPlaylist, sharedState: SharedPrivateState): void;
+  protected abstract processNumberValue(value: number, playlist: ParsedPlaylist, sharedState: SharedState): void;
 }
 
 abstract class TagWithEnumValueProcessor<T> extends TagWithValueProcessor {
@@ -97,7 +97,7 @@ export class ExtXPlaylistType extends TagWithEnumValueProcessor<PlaylistType> {
 export class ExtInf extends TagWithValueProcessor {
   protected readonly tag = EXTINF;
 
-  public process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedPrivateState): void {
+  public process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedState): void {
     const parts = tagValue.split(',');
     const duration = parseInt(parts[0]);
 
@@ -119,7 +119,7 @@ export class ExtInf extends TagWithValueProcessor {
 export class ExtXByteRange extends TagWithValueProcessor {
   protected readonly tag = EXT_X_BYTERANGE;
 
-  public process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedPrivateState): void {
+  public process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedState): void {
     const values = tagValue.split('@');
     const length = Number(values[0]);
     let offset = values[1] ? Number(values[1]) : undefined;
@@ -141,7 +141,7 @@ export class ExtXByteRange extends TagWithValueProcessor {
 export class ExtXBitrate extends TagWithValueProcessor {
   protected readonly tag = EXT_X_BITRATE;
 
-  public process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedPrivateState): void {
+  public process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedState): void {
     const bitrate = Number(tagValue);
 
     if (Number.isNaN(bitrate) || bitrate < 0) {
@@ -158,7 +158,7 @@ export class ExtXBitrate extends TagWithValueProcessor {
 export class ExtXProgramDateTime extends TagWithValueProcessor {
   protected readonly tag = EXT_X_PROGRAM_DATE_TIME;
 
-  public process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedPrivateState): void {
+  public process(tagValue: string, playlist: ParsedPlaylist, sharedState: SharedState): void {
     const timestamp = Date.parse(tagValue);
 
     if (Number.isNaN(timestamp)) {

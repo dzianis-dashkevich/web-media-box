@@ -1,6 +1,6 @@
 import { TagProcessor } from './base.ts';
 import type { ParsedPlaylist } from '../types/parsedPlaylist';
-import type { SharedPrivateState } from '../types/sharedState';
+import type { SharedState } from '../types/sharedState';
 import {
   EXT_X_ENDLIST,
   EXT_X_I_FRAMES_ONLY,
@@ -10,7 +10,7 @@ import {
 } from '../consts/tags.ts';
 
 export abstract class EmptyTagProcessor extends TagProcessor {
-  public abstract process(playlist: ParsedPlaylist, sharedState: SharedPrivateState): void;
+  public abstract process(playlist: ParsedPlaylist, sharedState: SharedState): void;
 }
 
 export class ExtXIndependentSegments extends EmptyTagProcessor {
@@ -40,7 +40,7 @@ export class ExtXIframesOnly extends EmptyTagProcessor {
 export class ExtXDiscontinuity extends EmptyTagProcessor {
   protected readonly tag = EXT_X_DISCONTINUITY;
 
-  public process(playlist: ParsedPlaylist, sharedState: SharedPrivateState): void {
+  public process(playlist: ParsedPlaylist, sharedState: SharedState): void {
     sharedState.currentSegment.isDiscontinuity = true;
   }
 }
@@ -48,7 +48,7 @@ export class ExtXDiscontinuity extends EmptyTagProcessor {
 export class ExtXGap extends TagProcessor {
   protected readonly tag = EXT_X_GAP;
 
-  public process(playlist: ParsedPlaylist, sharedState: SharedPrivateState): void {
+  public process(playlist: ParsedPlaylist, sharedState: SharedState): void {
     sharedState.currentSegment.isGap = true;
   }
 }

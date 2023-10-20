@@ -26,6 +26,7 @@ import {
   EXT_X_PART,
   EXT_X_PROGRAM_DATE_TIME,
   EXT_X_MEDIA,
+  EXT_X_DATERANGE,
 } from './consts/tags.ts';
 import type {
   CustomTagMap,
@@ -65,6 +66,7 @@ import {
   ExtXMap,
   ExtXPart,
   ExtXMedia,
+  ExtXDaterange,
 } from './tags/tagWithAttributesProcessors.ts';
 
 const defaultSegment: Segment = {
@@ -142,6 +144,7 @@ class Parser {
       [EXT_X_MAP]: new ExtXMap(this.warnCallback),
       [EXT_X_PART]: new ExtXPart(this.warnCallback),
       [EXT_X_MEDIA]: new ExtXMedia(this.warnCallback),
+      [EXT_X_DATERANGE]: new ExtXDaterange(this.warnCallback),
     };
   }
 

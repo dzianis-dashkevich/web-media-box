@@ -1,7 +1,7 @@
-import type { ParsedPlaylist, PartialSegment, Segment, Rendition, RenditionType, RenditionGroups, GroupId } from '../types/parsedPlaylist';
+import type { ParsedPlaylist, PartialSegment, Segment, Rendition, RenditionType, RenditionGroups, GroupId, DateRange } from '../types/parsedPlaylist';
 import { TagProcessor } from './base.ts';
 import { missingRequiredAttributeWarn } from '../utils/warn.ts';
-import { EXT_X_PART_INF, EXT_X_SERVER_CONTROL, EXT_X_START, EXT_X_KEY, EXT_X_MAP, EXT_X_PART, EXT_X_MEDIA } from '../consts/tags.ts';
+import { EXT_X_PART_INF, EXT_X_SERVER_CONTROL, EXT_X_START, EXT_X_KEY, EXT_X_MAP, EXT_X_PART, EXT_X_MEDIA, EXT_X_DATERANGE } from '../consts/tags.ts';
 import { parseBoolean } from '../utils/parse.ts';
 
 export abstract class TagWithAttributesProcessor extends TagProcessor {
@@ -238,5 +238,56 @@ export class ExtXMedia extends TagWithAttributesProcessor {
     }
 
     playlist.renditionGroups[renditionTypeKey][rendition.groupId] = [rendition];
+  }
+}
+
+export class ExtXDaterange extends TagWithAttributesProcessor {
+  private static readonly ID = 'ID';
+  private static readonly CLASS = 'CLASS';
+  private static readonly START_DATE = 'START-DATE';
+  private static readonly CUE = 'CUE';
+  private static readonly END_DATE = 'END-DATE';
+  private static readonly DURATION = 'DURATION';
+  private static readonly PLANNED_DURATION = 'PLANNED-DURATION';
+  // Client attributes look like X-<client-attribute>, example: X-COM-EXAMPLE-AD-ID="XYZ123" 
+  private static readonly CLIENT_ATTRIBUTES = 'X-';
+  private static readonly SCTE35_CMD = 'SCTE35-CMD';
+  private static readonly SCTE35_OUT = 'SCTE35-OUT';
+  private static readonly SCTE35_IN = 'SCTE35-IN';
+  private static readonly END_ON_NEXT = 'END-ON-NEXT';
+
+  protected requiredAttributes = new Set([ExtXDaterange.ID, ExtXDaterange.START_DATE]);
+  protected tag = EXT_X_DATERANGE;
+
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist): void {
+    if (!playlist.dateRanges) {
+      playlist.dateRanges = [];
+    }
+    const dateRange: DateRange = {
+      id: tagAttributes[ExtXDaterange.ID],
+      class: tagAttributes[ExtXDaterange.CLASS],
+      startDate: tagAttributes[ExtXDaterange.START_DATE],
+      cue: tagAttributes[ExtXDaterange.CUE].split(','),
+      endDate: tagAttributes[ExtXDaterange.END_DATE],
+      duration: Number(tagAttributes[ExtXDaterange.DURATION]),
+      plannedDuration: Number(tagAttributes[ExtXDaterange.PLANNED_DURATION]),
+      scte35Cmd: Number(tagAttributes[ExtXDaterange.SCTE35_CMD]),
+      scte35Out: Number(tagAttributes[ExtXDaterange.SCTE35_OUT]),
+      scte35In: Number(tagAttributes[ExtXDaterange.SCTE35_IN]),
+      endOnNext: parseBoolean(tagAttributes[ExtXDaterange.END_ON_NEXT], false),
+    }
+    const attributeKeys = Object.keys(tagAttributes);
+
+    // If we have more attributes on the tag than already parsed we have client attributes.
+    if (Object.keys(dateRange).length < attributeKeys.length) {
+      dateRange.clientAttributes = {};
+      attributeKeys.forEach((key) => {
+        if (key.startsWith(ExtXDaterange.CLIENT_ATTRIBUTES) && dateRange.clientAttributes) {
+          // The attribute value MUST be a quoted-string, a hexadecimal-sequence, or a decimal-floating-point.
+          dateRange.clientAttributes[key] = Number.isNaN(Number(tagAttributes[key])) ? tagAttributes[key] : Number(tagAttributes[key]);
+        }
+      });
+    }
+    playlist.dateRanges.push(dateRange);
   }
 }

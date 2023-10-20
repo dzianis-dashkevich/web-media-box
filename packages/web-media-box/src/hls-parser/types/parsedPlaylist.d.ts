@@ -81,6 +81,21 @@ export interface RenditionGroups {
   closedCaptions: Record<GroupId, RenditionGroup>;
 }
 
+export interface DateRange {
+  id: string;
+  class?: string;
+  startDate: string;
+  cue?: string[];
+  endDate?: string;
+  duration?: number;
+  plannedDuration?: number;
+  clientAttributes?: Record<string, string | number>;
+  scte35Cmd?: number;
+  scte35Out?: number;
+  scte35In?: number;
+  endOnNext?: boolean;
+}
+
 export type PlaylistType = 'EVENT' | 'VOD';
 
 export interface ParsedPlaylist {
@@ -117,4 +132,6 @@ export interface ParsedPlaylist {
   renditionGroups: RenditionGroups;
   // Used to persist EXT_X_BITRATE across segments
   currentBitrate?: number;
+  // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.5.1
+  dateRanges?: Array<DateRange>;
 }

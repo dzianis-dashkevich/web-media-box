@@ -29,57 +29,35 @@ import {
   SegmentTemplateAttributes
 } from '@/dash-parser/consts/attributes.ts';
 
-/**
- * 
- * @param attributes The list of attributes taken from the tag
- * @param expectedAttributes The expected attributes based on the DASH spec
- * @returns A parsed and formatted list attributes.
- */
-const formatAttributes = (
-  attributes: Record<string, unknown>,
-  expectedAttributes: Array<Attribute>,
-  tagName: string
-  ):Record<string, unknown> => {
-  const atts: Record<string, unknown> = {};
-
-  expectedAttributes.forEach((expected) => {
-    const value = attributes[expected.name];
-
-    if (expected.required && value == null) {
-      missingRequiredAttributeWarn(tagName, expected.name);
-      return;
-    }
-
-    if (value == null && expected.default) {
-      atts[expected.name] = expected.default;
-    }
-
-    if (value) {
-      atts[expected.name] = value;
-    }
-  })
-
-  // Format the retrieved attributes
-  return parseAttributes(atts);
-}
-
 export abstract class TagProcessor {
   protected readonly warnCallback: WarnCallback;
   protected abstract readonly tag: string;
+  protected abstract readonly requiredAttributes: Set<string>;
 
-  public constructor(warnCallback: WarnCallback) {
-    this.warnCallback = warnCallback;
-  }
-
-  public abstract process(
+  public process(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
     sharedState: SharedState,
-    pendingProcessors: PendingProcessors
-  ): void;
+    pendingProcessors: PendingProcessors): void {
+    let isRequiredAttributedMissed = false;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    this.requiredAttributes.forEach((requiredAttribute) => {
+      const hasRequiredAttribute = requiredAttribute in tagInfo.attributes;
+
+      if (!hasRequiredAttribute) {
+        this.warnCallback(missingRequiredAttributeWarn(this.tag, requiredAttribute));
+        isRequiredAttributedMissed = true;
+      }
+    });
+
+    if (isRequiredAttributedMissed) {
+      return;
+    }
+
+    return this.safeProcess(tagInfo, parentTagInfo, parsedManifest, sharedState, pendingProcessors);
+  }
+
   public processPending(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
@@ -87,17 +65,47 @@ export abstract class TagProcessor {
   ): void {
     // specific processor will override
   }
+
+  protected abstract safeProcess(
+    tagInfo: TagInfo,
+    parentTagInfo: TagInfo | null,
+    parsedManifest: ParsedManifest,
+    sharedState: SharedState,
+    pendingProcessors: PendingProcessors): void;
+
+  public constructor(warnCallback: WarnCallback) {
+    this.warnCallback = warnCallback;
+  }
 }
 
 export class Mpd extends TagProcessor {
+  private static readonly ID = 'id';
+  private static readonly PROFILES = 'profiles';
+  private static readonly TYPE = 'type';
+  private static readonly AVAILABILITY_START_TIME = 'availabilityStartTime';
+  private static readonly PUBLISH_TIME = 'publishTime';
+  private static readonly MEDIA_PRESENTATION_TIME = 'mediaPresentationDuration';
+  private static readonly MIN_BUFFER_TIME = 'minBufferTime';
+  private static readonly XMLNS = 'xmlns';
+  private static readonly XMLNS_XSI = 'xmlns:xsi';
+  private static readonly XSI_SCHEMA_LOCATION = 'xsi:schemaLocation';
+
+  protected readonly requiredAttributes = new Set([Mpd.PROFILES, Mpd.MIN_BUFFER_TIME]);
   protected readonly tag = MPD;
 
-  process(
-    tagInfo: TagInfo,
-    sharedState: SharedState,
-  ): void {
-    const attributes = formatAttributes(tagInfo.tagAttributes, MPDAttributes, tagInfo.tagName);
-    sharedState.attributes = attributes;
+  protected safeProcess(tagInfo: TagInfo, sharedState: SharedState): void {
+      const attributes = parseAttributes(tagInfo.tagAttributes);
+      sharedState.mpdAttributes = {
+        id: attributes[Mpd.ID],
+        profiles: attributes[Mpd.PROFILES],
+        type: attributes[Mpd.TYPE] || 'static',
+        availabilityStartTime: attributes[Mpd.AVAILABILITY_START_TIME],
+        publishTime: attributes[Mpd.PUBLISH_TIME],
+        mediaPresentationDuration: attributes[Mpd.MEDIA_PRESENTATION_TIME],
+        xmlns: attributes[Mpd.XMLNS],
+        'xmlns:xsi': attributes[Mpd.XMLNS_XSI],
+        'xsi:schemaLocation': attributes[Mpd.XSI_SCHEMA_LOCATION],
+      };
   }
 }
 
@@ -185,7 +193,7 @@ export class Event extends TagProcessor {
     sharedState: SharedState,
     pendingProcessors: PendingProcessors
   ): void {
-    const attributes = formatAttributes(tagInfo.tagAttributes, EventAttributes, tagInfo.tagName);
+    const attributes = parseAttributes(tagInfo.tagAttributes);
 
     if (parsedManifest.events?.length) {
       parsedManifest.events = [];

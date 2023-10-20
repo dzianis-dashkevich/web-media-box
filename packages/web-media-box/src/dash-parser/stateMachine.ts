@@ -19,6 +19,9 @@ export type StateMachineTransition = (char: string) => void;
 export default function createStateMachine(tagInfoCallback: TagInfoCallback): StateMachineTransition {
   let currentState = PARSE_EMPTY_SPACE_STATE;
 
+  const levels: Map<number, TagInfo | null> = new Map();
+
+  let currentDepth = -1;
   let lastChar: string | null = null;
   let currentTagKey = '';
   let currentTagValue = '';
@@ -27,26 +30,36 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
   let hasChildren = true;
   let currentTagAttributeKeyValueMap: Record<string, string> = {};
 
+  const emitTagInfo = (): void => {
+    if (!currentTagKey) {
+      return;
+    }
+
+    const tagInfo: TagInfo = {
+      tagKey: currentTagKey,
+      tagValue: currentTagValue || null,
+      tagAttributes: currentTagAttributeKeyValueMap,
+      hasChildren,
+    };
+
+    const parentDepth = hasChildren ? currentDepth - 1 : currentDepth;
+
+    tagInfoCallback(tagInfo, levels.get(parentDepth) || null);
+
+    if (hasChildren) {
+      levels.set(currentDepth, tagInfo);
+    }
+
+    currentTagKey = '';
+    currentTagValue = '';
+    currentTagAttributeKeyValueMap = {};
+    hasChildren = true;
+  };
+
   const stateMachine: Record<number, (char: string) => void> = {
     [PARSE_EMPTY_SPACE_STATE]: (char) => {
       if (char === '<') {
         currentState = PARSE_TAG_KEY_STATE;
-
-        if (currentTagKey) {
-          tagInfoCallback(
-            {
-              tagKey: currentTagKey,
-              tagValue: currentTagValue || null,
-              tagAttributes: currentTagAttributeKeyValueMap,
-              hasChildren,
-            },
-            null
-          ); // TODO: parent
-          currentTagKey = '';
-          currentTagValue = '';
-          currentTagAttributeKeyValueMap = {};
-          hasChildren = true;
-        }
       }
     },
     [PARSE_TAG_KEY_STATE]: (char) => {
@@ -63,6 +76,13 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
       if (char === '/') {
         currentState = PARSE_EMPTY_SPACE_STATE;
         hasChildren = lastChar === '<';
+        if (hasChildren) {
+          emitTagInfo();
+
+          levels.delete(currentDepth);
+          currentDepth--;
+        }
+
         return;
       }
 
@@ -72,8 +92,18 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
       }
 
       if (char === '>') {
-        currentState = PARSE_TAG_BODY_STATE;
+        currentState = PARSE_EMPTY_SPACE_STATE;
+
+        if (hasChildren) {
+          currentState = PARSE_TAG_BODY_STATE;
+          currentDepth++;
+        }
+
         return;
+      }
+
+      if (lastChar === '<') {
+        emitTagInfo();
       }
 
       currentTagKey += char;
@@ -110,22 +140,6 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
 
       if (char === '<') {
         currentState = PARSE_TAG_KEY_STATE;
-
-        if (currentTagKey) {
-          tagInfoCallback(
-            {
-              tagKey: currentTagKey,
-              tagValue: currentTagValue || null,
-              tagAttributes: currentTagAttributeKeyValueMap,
-              hasChildren,
-            },
-            null
-          ); // TODO: parent
-          currentTagKey = '';
-          currentTagValue = '';
-          currentTagAttributeKeyValueMap = {};
-          hasChildren = true;
-        }
         return;
       }
 
@@ -138,6 +152,4 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
     lastChar = char;
   };
 }
-
-// TODO: add paren node support
 

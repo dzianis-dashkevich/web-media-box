@@ -22,6 +22,3 @@ export const EXT_X_BITRATE = 'EXT-X-BITRATE';
 export const EXT_X_PART = 'EXT-X-PART';
 export const EXT_X_MEDIA = 'EXT-X-MEDIA';
 export const EXT_X_DATERANGE = 'EXT-X-DATERANGE';
-export const EXT_X_SKIP = 'EXT-X-SKIP';
-export const EXT_X_PRELOAD_HINT = 'EXT-X-PRELOAD-HINT';
-export const EXT_X_RENDITION_REPORT = 'EXT-X-RENDITION-REPORT';

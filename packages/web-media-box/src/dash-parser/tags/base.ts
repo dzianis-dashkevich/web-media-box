@@ -31,8 +31,8 @@ export abstract class TagProcessor {
     pendingProcessors: PendingProcessors): void {
     let isRequiredAttributedMissed = false;
 
-    this.requiredAttributes.forEach((requiredAttribute) => {
-      const hasRequiredAttribute = requiredAttribute in tagInfo.attributes;
+    this.requiredAttributes && this.requiredAttributes.forEach((requiredAttribute) => {
+      const hasRequiredAttribute = requiredAttribute in tagInfo.tagAttributes;
 
       if (!hasRequiredAttribute) {
         this.warnCallback(missingRequiredAttributeWarn(this.tag, requiredAttribute));
@@ -79,16 +79,22 @@ export class Mpd extends TagProcessor {
   protected readonly requiredAttributes = new Set([Mpd.PROFILES, Mpd.MIN_BUFFER_TIME]);
   protected readonly tag = MPD;
 
-  protected safeProcess(tagInfo: TagInfo, sharedState: SharedState): void {
-      const attributes = parseAttributes(tagInfo.tagAttributes);
-      sharedState.mpdAttributes = {
-        id: attributes[Mpd.ID],
-        profiles: attributes[Mpd.PROFILES],
-        type: attributes[Mpd.TYPE] || 'static',
-        availabilityStartTime: attributes[Mpd.AVAILABILITY_START_TIME],
-        publishTime: attributes[Mpd.PUBLISH_TIME],
-        mediaPresentationDuration: attributes[Mpd.MEDIA_PRESENTATION_TIME],
-      };
+  protected safeProcess(
+    tagInfo: TagInfo,
+    parentTagInfo: TagInfo | null,
+    parsedManifest: ParsedManifest,
+    sharedState: SharedState,
+    pendingProcessors: PendingProcessors
+  ): void {
+    const attributes = parseAttributes(tagInfo.tagAttributes);
+    sharedState.mpdAttributes = {
+      id: attributes[Mpd.ID],
+      profiles: attributes[Mpd.PROFILES],
+      type: attributes[Mpd.TYPE] || 'static',
+      availabilityStartTime: attributes[Mpd.AVAILABILITY_START_TIME],
+      publishTime: attributes[Mpd.PUBLISH_TIME],
+      mediaPresentationDuration: attributes[Mpd.MEDIA_PRESENTATION_TIME],
+    };
   }
 }
 
@@ -101,14 +107,17 @@ export class Period extends TagProcessor {
 
   safeProcess(
     tagInfo: TagInfo,
+    parentTagInfo: TagInfo | null,
+    parsedManifest: ParsedManifest,
     sharedState: SharedState,
+    pendingProcessors: PendingProcessors
   ): void {
-      const attributes = parseAttributes(tagInfo.tagAttributes);
-      sharedState.periodAttributes = {
-        id: attributes[Period.ID],
-        start: attributes[Period.START],
-        duration: attributes[Period.DURATION],
-      };
+    const attributes = parseAttributes(tagInfo.tagAttributes);
+    sharedState.periodAttributes = {
+      id: attributes[Period.ID],
+      start: attributes[Period.START],
+      duration: attributes[Period.DURATION],
+    };
   }
 }
 
@@ -122,10 +131,13 @@ export class AdaptationSet extends TagProcessor {
 
   safeProcess(
     tagInfo: TagInfo,
+    parentTagInfo: TagInfo | null,
+    parsedManifest: ParsedManifest,
     sharedState: SharedState,
+    pendingProcessors: PendingProcessors
   ): void {
     const attributes = parseAttributes(tagInfo.tagAttributes);
-    sharedState.adaptionSetAttributes = {
+    sharedState.adaptationSetAttributes = {
       mimeType: attributes[AdaptationSet.MIME_TYPE],
       contentType: attributes[AdaptationSet.CONTENT_TYPE],
       subsegmentAlignment: attributes[AdaptationSet.SUBSEGMENT_ALIGNMENT],
@@ -167,7 +179,10 @@ export class UTCTiming extends TagProcessor {
 
   safeProcess(
     tagInfo: TagInfo,
+    parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
+    sharedState: SharedState,
+    pendingProcessors: PendingProcessors
   ): void {
     const attributes = parseAttributes(tagInfo.tagAttributes);
 

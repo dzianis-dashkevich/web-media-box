@@ -61,7 +61,10 @@ class Parser {
       custom: {},
     };
 
-    this.sharedState = {};
+    this.sharedState = {
+      mpdAttributes: {},
+      adaptationSetAttributes: {}
+    };
 
     this.pendingProcessors = new PendingProcessors();
 

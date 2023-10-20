@@ -5,8 +5,8 @@ import { describe, it, expect } from 'bun:test';
 describe('dash-parser spec', () => {
   // TODO: create valid tests
   it('testString should give us JSON', () => {
-    const p = new FullManifestParser();
-    const parsed = p.parse(testMPD);
-    expect(parsed.segments.length).toBe(0);
+    const p = new FullManifestParser({});
+    const parsed = p.parseFullPlaylist(testMPD);
+    expect(parsed).toBe(0);
   });
 });

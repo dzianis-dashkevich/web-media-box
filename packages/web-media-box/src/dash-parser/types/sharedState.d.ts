@@ -1,6 +1,6 @@
 export interface SharedState {
-  mpdAttributes?: Record<string, unknown>,
+  mpdAttributes: Record<string, unknown>,
   periodAttributes?: Record<string, unknown>,
-  adaptionSetAttributes?: Record<string, unknown>,
+  adaptationSetAttributes?: Record<string, unknown>,
   attributes?: Record<string, unknown>
 }

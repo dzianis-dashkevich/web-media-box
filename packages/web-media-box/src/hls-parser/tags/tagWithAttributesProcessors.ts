@@ -437,5 +437,4 @@ export class ExtXPreloadHint extends TagWithAttributesProcessor {
 
     playlist.preloadHints.push(preloadHint);
   }
-
 }

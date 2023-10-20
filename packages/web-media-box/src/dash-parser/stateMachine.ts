@@ -36,7 +36,7 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
           tagInfoCallback(
             {
               tagKey: currentTagKey,
-              tagValue: currentTagValue,
+              tagValue: currentTagValue || null,
               tagAttributes: currentTagAttributeKeyValueMap,
               hasChildren,
             },
@@ -115,7 +115,7 @@ export default function createStateMachine(tagInfoCallback: TagInfoCallback): St
           tagInfoCallback(
             {
               tagKey: currentTagKey,
-              tagValue: currentTagValue,
+              tagValue: currentTagValue || null,
               tagAttributes: currentTagAttributeKeyValueMap,
               hasChildren,
             },

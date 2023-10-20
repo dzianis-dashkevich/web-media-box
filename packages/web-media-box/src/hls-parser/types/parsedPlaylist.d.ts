@@ -139,5 +139,5 @@ export interface ParsedPlaylist {
   // Used to persist EXT_X_BITRATE across segments
   currentBitrate?: number;
   // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.5.1
-  dateRanges?: DateRange[];
+  dateRanges: DateRange[];
 }

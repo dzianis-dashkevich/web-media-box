@@ -260,9 +260,6 @@ export class ExtXDaterange extends TagWithAttributesProcessor {
   protected tag = EXT_X_DATERANGE;
 
   protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist): void {
-    if (!playlist.dateRanges) {
-      playlist.dateRanges = [];
-    }
     const dateRange: DateRange = {
       id: tagAttributes[ExtXDaterange.ID],
       class: tagAttributes[ExtXDaterange.CLASS],
@@ -277,6 +274,7 @@ export class ExtXDaterange extends TagWithAttributesProcessor {
       endOnNext: parseBoolean(tagAttributes[ExtXDaterange.END_ON_NEXT], false),
       clientAttributes: {}
     }
+
     Object
       .keys(tagAttributes)
       .filter((tagKey) => tagKey.startsWith(ExtXDaterange.CLIENT_ATTRIBUTES))

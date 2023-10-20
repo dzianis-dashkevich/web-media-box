@@ -112,6 +112,7 @@ class Parser {
         subtitles: {},
         closedCaptions: {},
       },
+      dateRanges: [],
     };
 
     this.currentSegment = { ...defaultSegment };

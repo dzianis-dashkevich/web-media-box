@@ -28,7 +28,7 @@ import {
   EXT_X_MEDIA,
   EXT_X_STREAM_INF,
   EXT_X_SKIP,
-  EXT_X_I_FRAME_STREAM_INF
+  EXT_X_I_FRAME_STREAM_INF,
   EXT_X_DATERANGE,
 } from './consts/tags.ts';
 import type {

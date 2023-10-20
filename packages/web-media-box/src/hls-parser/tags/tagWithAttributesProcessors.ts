@@ -275,19 +275,16 @@ export class ExtXDaterange extends TagWithAttributesProcessor {
       scte35Out: Number(tagAttributes[ExtXDaterange.SCTE35_OUT]),
       scte35In: Number(tagAttributes[ExtXDaterange.SCTE35_IN]),
       endOnNext: parseBoolean(tagAttributes[ExtXDaterange.END_ON_NEXT], false),
+      clientAttributes: {}
     }
-    const attributeKeys = Object.keys(tagAttributes);
+    Object
+      .keys(tagAttributes)
+      .filter((tagKey) => tagKey.startsWith(ExtXDaterange.CLIENT_ATTRIBUTES))
+      .reduce((clientAttributes, tagKey) => { 
+        clientAttributes[tagKey] = tagAttributes[tagKey];
+        return clientAttributes;
+      }, dateRange.clientAttributes);
 
-    // If we have more attributes on the tag than already parsed we have client attributes.
-    if (Object.keys(dateRange).length < attributeKeys.length) {
-      dateRange.clientAttributes = {};
-      attributeKeys.forEach((key) => {
-        if (key.startsWith(ExtXDaterange.CLIENT_ATTRIBUTES) && dateRange.clientAttributes) {
-          // The attribute value MUST be a quoted-string, a hexadecimal-sequence, or a decimal-floating-point.
-          dateRange.clientAttributes[key] = Number.isNaN(Number(tagAttributes[key])) ? tagAttributes[key] : Number(tagAttributes[key]);
-        }
-      });
-    }
     playlist.dateRanges.push(dateRange);
   }
 }

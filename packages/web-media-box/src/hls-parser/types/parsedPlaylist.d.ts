@@ -81,7 +81,6 @@ export interface RenditionGroups {
   closedCaptions: Record<GroupId, RenditionGroup>;
 }
 
-<<<<<<< HEAD
 export enum Cue {
   PRE = 'PRE',
   POST = 'POST',
@@ -102,7 +101,7 @@ export interface DateRange {
   scte35In?: number;
   endOnNext: boolean;
 }
-=======
+
 export interface Resolution {
   width: number,
   height: number
@@ -134,7 +133,6 @@ export interface VariantStream {
 export interface Skip {
   skippedSegments: number;
   recentlyRemovedDateranges?: Array<string>;
->>>>>>> main
 }
 
 export type PlaylistType = 'EVENT' | 'VOD';
@@ -171,12 +169,9 @@ export interface ParsedPlaylist {
   segments: Array<Segment>;
   custom: Record<string, unknown>;
   renditionGroups: RenditionGroups;
-<<<<<<< HEAD
   // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.5.1
   dateRanges: DateRange[];
-=======
   variantStreams: Array<VariantStream>;
   // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.5.2
   skip?: Skip;
->>>>>>> main
 }

@@ -86,9 +86,6 @@ export class Mpd extends TagProcessor {
   private static readonly PUBLISH_TIME = 'publishTime';
   private static readonly MEDIA_PRESENTATION_TIME = 'mediaPresentationDuration';
   private static readonly MIN_BUFFER_TIME = 'minBufferTime';
-  private static readonly XMLNS = 'xmlns';
-  private static readonly XMLNS_XSI = 'xmlns:xsi';
-  private static readonly XSI_SCHEMA_LOCATION = 'xsi:schemaLocation';
 
   protected readonly requiredAttributes = new Set([Mpd.PROFILES, Mpd.MIN_BUFFER_TIME]);
   protected readonly tag = MPD;
@@ -102,9 +99,6 @@ export class Mpd extends TagProcessor {
         availabilityStartTime: attributes[Mpd.AVAILABILITY_START_TIME],
         publishTime: attributes[Mpd.PUBLISH_TIME],
         mediaPresentationDuration: attributes[Mpd.MEDIA_PRESENTATION_TIME],
-        xmlns: attributes[Mpd.XMLNS],
-        'xmlns:xsi': attributes[Mpd.XMLNS_XSI],
-        'xsi:schemaLocation': attributes[Mpd.XSI_SCHEMA_LOCATION],
       };
   }
 }
@@ -195,7 +189,7 @@ export class Event extends TagProcessor {
   ): void {
     const attributes = parseAttributes(tagInfo.tagAttributes);
 
-    if (parsedManifest.events?.length) {
+    if (!parsedManifest.events) {
       parsedManifest.events = [];
     }
 

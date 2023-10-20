@@ -55,7 +55,8 @@ class Parser {
       options.transformTagAttributes || ((tagKey, tagAttributes): Record<string, string> => tagAttributes);
 
     this.parsedManifest = {
-      segments: [],
+      representations: [],
+      type: 'static', //default value, could be updated after parsing
       custom: {},
     };
 

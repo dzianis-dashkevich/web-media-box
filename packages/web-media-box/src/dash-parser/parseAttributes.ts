@@ -1,7 +1,7 @@
 import { parseDivisionValue } from './utils/string';
 import { parseDuration, parseDate } from './utils/time';
 
-interface Parsers {
+type Parsers = {
   [key: string]: (value: string) => string | number;
 }
 

@@ -156,7 +156,7 @@ export interface ParsedPlaylist {
   custom: Record<string, unknown>;
   renditionGroups: RenditionGroups;
   variantStreams: Array<VariantStream>;
-  iFramePlaylists: Array<iFramePlaylist>
+  iFramePlaylists: Array<IFramePlaylist>
   // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.5.2
   skip?: Skip;
 }

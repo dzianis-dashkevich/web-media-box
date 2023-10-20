@@ -1,4 +1,4 @@
-import type { ParsedPlaylist, PartialSegment, Rendition, RenditionType, RenditionGroups, GroupId, Resolution, AllowedCpc, iFramePlaylist, BaseStreamInf } from '../types/parsedPlaylist';
+import type { ParsedPlaylist, PartialSegment, Rendition, RenditionType, RenditionGroups, GroupId, Resolution, AllowedCpc, IFramePlaylist, BaseStreamInf } from '../types/parsedPlaylist';
 import type { SharedState } from '../types/sharedState';
 import { TagProcessor } from './base.ts';
 import { missingRequiredAttributeWarn } from '../utils/warn.ts';
@@ -357,7 +357,7 @@ export class ExtXIFrameStreamInf extends BaseStreamInfProcessor {
   protected readonly tag = EXT_X_I_FRAME_STREAM_INF;
 
   protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist): void {
-    const iFrameStreamInf: iFramePlaylist = {
+    const iFrameStreamInf: IFramePlaylist = {
       ...this.parseCommonAttributes(tagAttributes),
       uri: tagAttributes[ExtXIFrameStreamInf.URI]
     };

@@ -114,7 +114,7 @@ export interface VariantStreamSpecific {
 }
 
 export interface VariantStream extends BaseStreamInf, VariantStreamSpecific {}
-export interface iFramePlaylist extends BaseStreamInf {}
+export interface IFramePlaylist extends BaseStreamInf {}
 
 export interface Skip {
   skippedSegments: number;

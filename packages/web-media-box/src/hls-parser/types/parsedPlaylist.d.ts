@@ -81,11 +81,17 @@ export interface RenditionGroups {
   closedCaptions: Record<GroupId, RenditionGroup>;
 }
 
+export enum Cue {
+  PRE = 'PRE',
+  POST = 'POST',
+  ONCE = 'ONCE'
+}
+
 export interface DateRange {
   id: string;
   class?: string;
   startDate: string;
-  cue?: string[];
+  cue?: Cue[];
   endDate?: string;
   duration?: number;
   plannedDuration?: number;

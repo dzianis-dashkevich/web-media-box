@@ -1,4 +1,4 @@
-import type { ParsedPlaylist, PartialSegment, Segment, Rendition, RenditionType, RenditionGroups, GroupId, DateRange } from '../types/parsedPlaylist';
+import type { ParsedPlaylist, PartialSegment, Segment, Rendition, RenditionType, RenditionGroups, GroupId, DateRange, Cue } from '../types/parsedPlaylist';
 import { TagProcessor } from './base.ts';
 import { missingRequiredAttributeWarn } from '../utils/warn.ts';
 import { EXT_X_PART_INF, EXT_X_SERVER_CONTROL, EXT_X_START, EXT_X_KEY, EXT_X_MAP, EXT_X_PART, EXT_X_MEDIA, EXT_X_DATERANGE } from '../consts/tags.ts';
@@ -267,7 +267,7 @@ export class ExtXDaterange extends TagWithAttributesProcessor {
       id: tagAttributes[ExtXDaterange.ID],
       class: tagAttributes[ExtXDaterange.CLASS],
       startDate: tagAttributes[ExtXDaterange.START_DATE],
-      cue: tagAttributes[ExtXDaterange.CUE].split(','),
+      cue: tagAttributes[ExtXDaterange.CUE].split(',') as Cue[],
       endDate: tagAttributes[ExtXDaterange.END_DATE],
       duration: Number(tagAttributes[ExtXDaterange.DURATION]),
       plannedDuration: Number(tagAttributes[ExtXDaterange.PLANNED_DURATION]),

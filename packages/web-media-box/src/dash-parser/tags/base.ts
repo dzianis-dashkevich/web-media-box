@@ -17,17 +17,6 @@ import type { EventScheme, ParsedManifest, UTCTimingScheme } from '../types/pars
 import { missingRequiredAttributeWarn } from '@/dash-parser/utils/warn.ts';
 import { parseAttributes } from '@/dash-parser/parseAttributes';
 import { parseUTCTimingScheme } from '@/dash-parser/utils/parseUTCTimingScheme';
-import {
-  MPDAttributes,
-  AdaptationSetAttributes,
-  Attribute,
-  PeriodAttributes,
-  BaseURLAttributes,
-  UTCTimingAttributes,
-  EventStreamAttributes,
-  EventAttributes,
-  SegmentTemplateAttributes
-} from '@/dash-parser/consts/attributes.ts';
 
 export abstract class TagProcessor {
   protected readonly warnCallback: WarnCallback;
@@ -104,33 +93,51 @@ export class Mpd extends TagProcessor {
 }
 
 export class Period extends TagProcessor {
+  private static readonly ID = 'id';
+  private static readonly START = 'start';
+  private static readonly DURATION = 'duration';
+
   protected readonly tag = PERIOD;
 
-  process(
+  safeProcess(
     tagInfo: TagInfo,
-    parentTagInfo: TagInfo | null,
-    parsedManifest: ParsedManifest,
     sharedState: SharedState,
-    pendingProcessors: PendingProcessors
-  ): void {}
+  ): void {
+      const attributes = parseAttributes(tagInfo.tagAttributes);
+      sharedState.periodAttributes = {
+        id: attributes[Period.ID],
+        start: attributes[Period.START],
+        duration: attributes[Period.DURATION],
+      };
+  }
 }
 
 export class AdaptationSet extends TagProcessor {
+  private static readonly MIME_TYPE = 'mimeType';
+  private static readonly CONTENT_TYPE = 'contentType';
+  private static readonly SUBSEGMENT_ALIGNMENT = 'subsegmentAlignment';
+
+  protected readonly requiredAttributes = new Set([AdaptationSet.MIME_TYPE, AdaptationSet.CONTENT_TYPE]);
   protected readonly tag = ADAPTATION_SET;
 
-  process(
+  safeProcess(
     tagInfo: TagInfo,
-    parentTagInfo: TagInfo | null,
-    parsedManifest: ParsedManifest,
     sharedState: SharedState,
-    pendingProcessors: PendingProcessors
-  ): void {}
+  ): void {
+    const attributes = parseAttributes(tagInfo.tagAttributes);
+    sharedState.adaptionSetAttributes = {
+      mimeType: attributes[AdaptationSet.MIME_TYPE],
+      contentType: attributes[AdaptationSet.CONTENT_TYPE],
+      subsegmentAlignment: attributes[AdaptationSet.SUBSEGMENT_ALIGNMENT],
+    };
+  }
 }
 
 export class BaseUrl extends TagProcessor {
+  // TODO
   protected readonly tag = BASE_URL;
 
-  process(
+  safeProcess(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
@@ -140,9 +147,10 @@ export class BaseUrl extends TagProcessor {
 }
 
 export class Representation extends TagProcessor {
+  // TODO
   protected readonly tag = REPRESENTATION;
 
-  process(
+  safeProcess(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
@@ -152,21 +160,28 @@ export class Representation extends TagProcessor {
 }
 
 export class UTCTiming extends TagProcessor {
+  private static readonly SCHEME_ID_URI = 'schemeIdUri';
+
+  protected readonly requiredAttributes = new Set([UTCTiming.SCHEME_ID_URI]);
   protected readonly tag = UTC_TIMING;
 
-  process(
+  safeProcess(
     tagInfo: TagInfo,
     parsedManifest: ParsedManifest,
   ): void {
-    const attributes = formatAttributes(tagInfo.tagAttributes, UTCTimingAttributes, tagInfo.tagName);
-    parsedManifest.utcTimingScheme = attributes;
+    const attributes = parseAttributes(tagInfo.tagAttributes);
+
+    // Attributes other than SCHEME_ID_URI are added in the below function.
+    const utcAttributes = parseUTCTimingScheme(attributes);
+    parsedManifest.utcTimingScheme = utcAttributes as UTCTimingScheme;
   }
 }
 
 export class EventStream extends TagProcessor {
+  // TODO
   protected readonly tag = EVENT_STREAM;
 
-  process(
+  safeProcess(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
@@ -180,7 +195,7 @@ export class EventStream extends TagProcessor {
 export class Event extends TagProcessor {
   protected readonly tag = EVENT;
 
-  process(
+  safeProcess(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,

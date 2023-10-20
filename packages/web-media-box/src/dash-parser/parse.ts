@@ -23,7 +23,8 @@ import {
   AdaptationSet,
   Mpd,
   Period,
-  Representation
+  Representation,
+  UTCTiming
 } from '@/dash-parser/tags/base.ts';
 import { TagInfo } from '@/dash-parser/stateMachine.ts';
 import { ignoreTagWarn, unsupportedTagWarn } from '@/dash-parser/utils/warn.ts';
@@ -69,6 +70,7 @@ class Parser {
       [PERIOD]: new Period(this.warnCallback),
       [ADAPTATION_SET]: new AdaptationSet(this.warnCallback),
       [REPRESENTATION]: new Representation(this.warnCallback),
+      [UTC_TIMING]: new UTCTiming(this.warnCallback)
     };
   }
 

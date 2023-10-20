@@ -2,7 +2,7 @@ import type { ParsedPlaylist, PartialSegment, Rendition, RenditionType, Renditio
 import type { SharedPrivateState } from '../types/sharedState';
 import { TagProcessor } from './base.ts';
 import { missingRequiredAttributeWarn } from '../utils/warn.ts';
-import { EXT_X_PART_INF, EXT_X_SERVER_CONTROL, EXT_X_START, EXT_X_KEY, EXT_X_MAP, EXT_X_PART, EXT_X_MEDIA, EXT_X_STREAM_INF } from '../consts/tags.ts';
+import { EXT_X_PART_INF, EXT_X_SERVER_CONTROL, EXT_X_START, EXT_X_KEY, EXT_X_MAP, EXT_X_PART, EXT_X_MEDIA, EXT_X_STREAM_INF, EXT_X_SKIP } from '../consts/tags.ts';
 import { parseBoolean } from '../utils/parse.ts';
 
 export abstract class TagWithAttributesProcessor extends TagProcessor {
@@ -314,4 +314,19 @@ export class ExtXStreamInf extends TagWithAttributesProcessor {
       sharedState.isMultivariantPlaylist = true;
     }
   }
+}
+
+export class ExtXSkip extends TagWithAttributesProcessor {
+  private static readonly SKIPPED_SEGMENTS = 'SKIPPED-SEGMENTS';
+  private static readonly RECENTLY_REMOVED_DATERANGES = 'RECENTLY-REMOVED-DATERANGES';
+
+  protected requiredAttributes = new Set([ExtXSkip.SKIPPED_SEGMENTS]);
+  protected readonly tag = EXT_X_SKIP;
+
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist): void {
+    playlist.skip = {
+      skippedSegments: Number(tagAttributes[ExtXSkip.SKIPPED_SEGMENTS]),
+      recentlyRemovedDateranges: tagAttributes[ExtXSkip.RECENTLY_REMOVED_DATERANGES].split('\t')
+    };
+  } 
 }

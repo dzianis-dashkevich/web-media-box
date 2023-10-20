@@ -27,6 +27,7 @@ import {
   EXT_X_PROGRAM_DATE_TIME,
   EXT_X_MEDIA,
   EXT_X_STREAM_INF,
+  EXT_X_SKIP,
 } from './consts/tags.ts';
 import type {
   CustomTagMap,
@@ -68,6 +69,7 @@ import {
   ExtXPart,
   ExtXMedia,
   ExtXStreamInf,
+  ExtXSkip,
 } from './tags/tagWithAttributesProcessors.ts';
 
 const defaultSegment: Segment = {
@@ -107,8 +109,9 @@ class Parser {
     this.debugCallback = options.debugCallback || noop;
     this.customTagMap = options.customTagMap || {};
     this.ignoreTags = options.ignoreTags || new Set();
-    this.transformTagValue = options.transformTagValue || ((tagKey, tagValue) => tagValue);
-    this.transformTagAttributes = options.transformTagAttributes || ((tagKey, tagAttributes) => tagAttributes);
+    this.transformTagValue = options.transformTagValue || ((tagKey, tagValue): string | null => tagValue);
+    this.transformTagAttributes =
+      options.transformTagAttributes || ((tagKey, tagAttributes): Record<string, string> => tagAttributes);
 
     this.parsedPlaylist = {
       m3u: false,
@@ -121,7 +124,7 @@ class Parser {
         audio: {},
         video: {},
         subtitles: {},
-        closedCaptions: {}
+        closedCaptions: {},
       },
       variantStreams: []
     };
@@ -133,7 +136,7 @@ class Parser {
       [EXT_X_ENDLIST]: new ExtXEndList(this.warnCallback),
       [EXT_X_I_FRAMES_ONLY]: new ExtXIframesOnly(this.warnCallback),
       [EXT_X_DISCONTINUITY]: new ExtXDiscontinuity(this.warnCallback),
-      [EXT_X_GAP]: new ExtXGap(this.warnCallback)
+      [EXT_X_GAP]: new ExtXGap(this.warnCallback),
     };
 
     this.tagValueMap = {
@@ -157,6 +160,7 @@ class Parser {
       [EXT_X_PART]: new ExtXPart(this.warnCallback),
       [EXT_X_MEDIA]: new ExtXMedia(this.warnCallback),
       [EXT_X_STREAM_INF]: new ExtXStreamInf(this.warnCallback),
+      [EXT_X_SKIP]: new ExtXSkip(this.warnCallback),
     };
   }
 

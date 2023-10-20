@@ -127,7 +127,7 @@ class Parser {
       isMultivariantPlaylist: false,
       currentSegment: { ...defaultSegment },
       currentVariant: { ...defaultVariantStream },
-    } as SharedState;
+    };
 
     this.emptyTagMap = {
       [EXT_X_INDEPENDENT_SEGMENTS]: new ExtXIndependentSegments(this.warnCallback),

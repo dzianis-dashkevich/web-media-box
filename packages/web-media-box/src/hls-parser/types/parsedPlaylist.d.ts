@@ -90,6 +90,7 @@ export type CpcRecord = Record<string, string[]>;
 export type AllowedCpc = Array<CpcRecord>;
 
 export interface VariantStream {
+  uri: string;
   bandwidth: number;
   averageBandwidth?: number;
   score?: number;
@@ -142,7 +143,7 @@ export interface ParsedPlaylist {
   segments: Array<Segment>;
   custom: Record<string, unknown>;
   renditionGroups: RenditionGroups;
-  variantStreams?: Array<VariantStream>
+  variantStreams: Array<VariantStream>
   // Used to persist EXT_X_BITRATE across segments
   currentBitrate?: number;
 }

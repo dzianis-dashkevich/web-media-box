@@ -1,4 +1,5 @@
-import type { ParsedPlaylist, PartialSegment, Segment, Rendition, RenditionType, RenditionGroups, GroupId, VariantStream, Resolution, AllowedCpc } from '../types/parsedPlaylist';
+import type { ParsedPlaylist, PartialSegment, Rendition, RenditionType, RenditionGroups, GroupId, Resolution, AllowedCpc } from '../types/parsedPlaylist';
+import type { SharedPrivateState } from '../types/sharedState';
 import { TagProcessor } from './base.ts';
 import { missingRequiredAttributeWarn } from '../utils/warn.ts';
 import { EXT_X_PART_INF, EXT_X_SERVER_CONTROL, EXT_X_START, EXT_X_KEY, EXT_X_MAP, EXT_X_PART, EXT_X_MEDIA, EXT_X_STREAM_INF } from '../consts/tags.ts';
@@ -7,7 +8,7 @@ import { parseBoolean } from '../utils/parse.ts';
 export abstract class TagWithAttributesProcessor extends TagProcessor {
   protected abstract readonly requiredAttributes: Set<string>;
 
-  public process(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, currentSegment: Segment, currentVariant: VariantStream): void {
+  public process(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, sharedState: SharedPrivateState): void {
     let isRequiredAttributedMissed = false;
 
     this.requiredAttributes.forEach((requiredAttribute) => {
@@ -23,10 +24,10 @@ export abstract class TagWithAttributesProcessor extends TagProcessor {
       return;
     }
 
-    return this.safeProcess(tagAttributes, playlist, currentSegment, currentVariant);
+    return this.safeProcess(tagAttributes, playlist, sharedState);
   }
 
-  protected abstract safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, currentSegment: Segment, currentVariant: VariantStream): void;
+  protected abstract safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, sharedState: SharedPrivateState): void;
 }
 
 export class ExtXStart extends TagWithAttributesProcessor {
@@ -150,7 +151,7 @@ export class ExtXPart extends TagWithAttributesProcessor {
   protected readonly requiredAttributes = new Set([ExtXPart.URI, ExtXPart.DURATION]);
   protected readonly tag = EXT_X_PART;
 
-  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, currentSegment: Segment): void {
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, sharedState: SharedPrivateState): void {
     const part: PartialSegment = {
       uri: tagAttributes[ExtXPart.URI],
       duration: Number(tagAttributes[ExtXPart.DURATION]),
@@ -159,10 +160,10 @@ export class ExtXPart extends TagWithAttributesProcessor {
     if (tagAttributes[ExtXPart.BYTERANGE]) {
       const values = tagAttributes[ExtXPart.BYTERANGE].split('@');
       const length = Number(values[0]);
-      let offset = values[1] ? Number(values[1]) : undefined;
+      let offset = Number(values[1]);
 
-      if (typeof offset === 'undefined') {
-        const previousPartialSegment = currentSegment.parts?.[currentSegment.parts.length - 1];
+      if (Number.isNaN(offset)) {
+        const previousPartialSegment = sharedState.currentSegment.parts?.[sharedState.currentSegment.parts.length - 1];
 
         if (!previousPartialSegment || !previousPartialSegment.byteRange) {
           return this.warnCallback(`Unable to parse ${this.tag}: A BYTERANGE attribute without offset requires a previous partial segment with a byterange`);
@@ -182,11 +183,11 @@ export class ExtXPart extends TagWithAttributesProcessor {
       part.isGap = parseBoolean(tagAttributes[ExtXPart.GAP], false);
     }
 
-    if (!currentSegment.parts) {
-      currentSegment.parts = [];
+    if (!sharedState.currentSegment.parts) {
+      sharedState.currentSegment.parts = [];
     }
 
-    currentSegment.parts.push(part);
+    sharedState.currentSegment.parts.push(part);
   }
 }
 
@@ -262,7 +263,7 @@ export class ExtXStreamInf extends TagWithAttributesProcessor {
   protected readonly requiredAttributes = new Set([ExtXStreamInf.BANDWIDTH]);
   protected readonly tag = EXT_X_STREAM_INF;
 
-  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist): void {
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, sharedState: SharedPrivateState): void {
     // RESOLUTION attribute
     let parsedResolution = tagAttributes[ExtXStreamInf.RESOLUTION] ? tagAttributes[ExtXStreamInf.RESOLUTION].split('x').map(Number) : [];
     let resolution: Resolution | undefined;
@@ -307,10 +308,10 @@ export class ExtXStreamInf extends TagWithAttributesProcessor {
       pathwayId: tagAttributes[ExtXStreamInf.PATHWAY_ID]
     };
 
-    if (!playlist.variantStreams) {
-      playlist.variantStreams = [];
-    }
+    Object.assign(sharedState.currentVariant, variantStream);
 
-    playlist.variantStreams.push(variantStream);
+    if (!sharedState.isMultivariantPlaylist) {
+      sharedState.isMultivariantPlaylist = true;
+    }
   }
 }

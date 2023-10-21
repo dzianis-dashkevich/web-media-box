@@ -12,7 +12,7 @@ export default class Logger {
   private readonly console: Console;
   private readonly label: string;
 
-  private level: LoggerLevel = LoggerLevel.WARN;
+  private level: LoggerLevel = LoggerLevel.Debug;
 
   public constructor(console: Console, label: string) {
     this.console = console;
@@ -32,7 +32,7 @@ export default class Logger {
   }
 
   public debug(...args: Array<unknown>): void {
-    if (this.level > LoggerLevel.DEBUG) {
+    if (this.level > LoggerLevel.Debug) {
       return;
     }
 
@@ -40,7 +40,7 @@ export default class Logger {
   }
 
   public info(...args: Array<unknown>): void {
-    if (this.level > LoggerLevel.INFO) {
+    if (this.level > LoggerLevel.Info) {
       return;
     }
 
@@ -48,7 +48,7 @@ export default class Logger {
   }
 
   public warn(...args: Array<unknown>): void {
-    if (this.level > LoggerLevel.WARN) {
+    if (this.level > LoggerLevel.Warn) {
       return;
     }
 
@@ -56,7 +56,7 @@ export default class Logger {
   }
 
   public error(...args: Array<unknown>): void {
-    if (this.level > LoggerLevel.ERROR) {
+    if (this.level > LoggerLevel.Error) {
       return;
     }
 

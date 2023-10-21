@@ -81,9 +81,83 @@ export interface RenditionGroups {
   closedCaptions: Record<GroupId, RenditionGroup>;
 }
 
+export enum Cue {
+  PRE = 'PRE',
+  POST = 'POST',
+  ONCE = 'ONCE'
+}
+
+export interface DateRange {
+  id: string;
+  class?: string;
+  startDate: string;
+  cue?: Cue[];
+  endDate?: string;
+  duration?: number;
+  plannedDuration?: number;
+  clientAttributes: Record<string, string | number>;
+  scte35Cmd?: number;
+  scte35Out?: number;
+  scte35In?: number;
+  endOnNext: boolean;
+}
+
+export interface Resolution {
+  width: number,
+  height: number
+}
+
+export type CpcRecord = Record<string, string[]>;
+export type AllowedCpc = Array<CpcRecord>;
+
+export interface BaseStreamInf {
+  uri: string;
+  bandwidth: number;
+  averageBandwidth?: number;
+  score?: number;
+  codecs?: string[];
+  supplementalCodecs?: string[];
+  resolution?: Resolution;
+  hdcpLevel?: 'TYPE-0' | 'TYPE-1' | 'NONE';
+  allowedCpc?: AllowedCpc;
+  videoRange?: 'SDR' | 'HLG' | 'PQ';
+  stableVariantId?: string;
+  video?: string;
+  pathwayId?: string;
+}
+
+// VariantStream properties that are not in BaseStreamInf
+export interface VariantStreamSpecific {
+  frameRate?: number;
+  audio?: string;
+  subtitles?: string;
+  closedCaptions?: string;
+}
+
+export interface VariantStream extends BaseStreamInf, VariantStreamSpecific {}
+export interface IFramePlaylist extends BaseStreamInf {}
+
 export interface Skip {
   skippedSegments: number;
   recentlyRemovedDateranges?: Array<string>;
+}
+
+export enum HintType {
+  PART = 'PART',
+  MAP = 'MAP'
+}
+
+export interface PreloadHint {
+  type: HintType;
+  uri: string;
+  byterangeStart?: number;
+  byterangeLength?: number;
+}
+
+export interface RenditionReport {
+  uri?: string;
+  lastMsn?: number;
+  lastPart?: number;
 }
 
 export type PlaylistType = 'EVENT' | 'VOD';
@@ -120,8 +194,14 @@ export interface ParsedPlaylist {
   segments: Array<Segment>;
   custom: Record<string, unknown>;
   renditionGroups: RenditionGroups;
-  // Used to persist EXT_X_BITRATE across segments
-  currentBitrate?: number;
+  // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.5.1
+  dateRanges: DateRange[];
+  variantStreams: Array<VariantStream>;
+  iFramePlaylists: Array<IFramePlaylist>
   // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.5.2
-  skip?: Skip
+  skip?: Skip;
+  // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.5.3
+  preloadHints: PreloadHint[];
+  // https://datatracker.ietf.org/doc/html/draft-pantos-hls-rfc8216bis#section-4.4.5.4
+  renditionReports: RenditionReport[];
 }

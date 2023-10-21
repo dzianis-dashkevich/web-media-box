@@ -1,13 +1,28 @@
-import type { ParsedPlaylist, PartialSegment, Segment, Rendition, RenditionType, RenditionGroups, GroupId } from '../types/parsedPlaylist';
+import type { ParsedPlaylist, PartialSegment, Rendition, RenditionType, RenditionGroups, GroupId, Resolution, AllowedCpc, IFramePlaylist, BaseStreamInf, DateRange, Cue, HintType } from '../types/parsedPlaylist';
+import type { SharedState } from '../types/sharedState';
 import { TagProcessor } from './base.ts';
 import { missingRequiredAttributeWarn } from '../utils/warn.ts';
-import { EXT_X_PART_INF, EXT_X_SERVER_CONTROL, EXT_X_START, EXT_X_KEY, EXT_X_MAP, EXT_X_PART, EXT_X_MEDIA, EXT_X_SKIP } from '../consts/tags.ts';
+import {
+  EXT_X_PART_INF,
+  EXT_X_SERVER_CONTROL,
+  EXT_X_START,
+  EXT_X_KEY,
+  EXT_X_MAP,
+  EXT_X_PART,
+  EXT_X_SKIP,
+  EXT_X_MEDIA,
+  EXT_X_STREAM_INF,
+  EXT_X_I_FRAME_STREAM_INF,
+  EXT_X_DATERANGE,
+  EXT_X_PRELOAD_HINT,
+  EXT_X_RENDITION_REPORT,
+} from '../consts/tags.ts';
 import { parseBoolean } from '../utils/parse.ts';
 
 export abstract class TagWithAttributesProcessor extends TagProcessor {
   protected abstract readonly requiredAttributes: Set<string>;
 
-  public process(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, currentSegment: Segment): void {
+  public process(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, sharedState: SharedState): void {
     let isRequiredAttributedMissed = false;
 
     this.requiredAttributes.forEach((requiredAttribute) => {
@@ -23,10 +38,10 @@ export abstract class TagWithAttributesProcessor extends TagProcessor {
       return;
     }
 
-    return this.safeProcess(tagAttributes, playlist, currentSegment);
+    return this.safeProcess(tagAttributes, playlist, sharedState);
   }
 
-  protected abstract safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, currentSegment: Segment): void;
+  protected abstract safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, sharedState: SharedState): void;
 }
 
 export class ExtXStart extends TagWithAttributesProcessor {
@@ -150,7 +165,7 @@ export class ExtXPart extends TagWithAttributesProcessor {
   protected readonly requiredAttributes = new Set([ExtXPart.URI, ExtXPart.DURATION]);
   protected readonly tag = EXT_X_PART;
 
-  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, currentSegment: Segment): void {
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, sharedState: SharedState): void {
     const part: PartialSegment = {
       uri: tagAttributes[ExtXPart.URI],
       duration: Number(tagAttributes[ExtXPart.DURATION]),
@@ -159,10 +174,10 @@ export class ExtXPart extends TagWithAttributesProcessor {
     if (tagAttributes[ExtXPart.BYTERANGE]) {
       const values = tagAttributes[ExtXPart.BYTERANGE].split('@');
       const length = Number(values[0]);
-      let offset = values[1] ? Number(values[1]) : undefined;
+      let offset = Number(values[1]);
 
-      if (typeof offset === 'undefined') {
-        const previousPartialSegment = currentSegment.parts?.[currentSegment.parts.length - 1];
+      if (Number.isNaN(offset)) {
+        const previousPartialSegment = sharedState.currentSegment.parts?.[sharedState.currentSegment.parts.length - 1];
 
         if (!previousPartialSegment || !previousPartialSegment.byteRange) {
           return this.warnCallback(`Unable to parse ${this.tag}: A BYTERANGE attribute without offset requires a previous partial segment with a byterange`);
@@ -182,11 +197,26 @@ export class ExtXPart extends TagWithAttributesProcessor {
       part.isGap = parseBoolean(tagAttributes[ExtXPart.GAP], false);
     }
 
-    if (!currentSegment.parts) {
-      currentSegment.parts = [];
+    if (!sharedState.currentSegment.parts) {
+      sharedState.currentSegment.parts = [];
     }
 
-    currentSegment.parts.push(part);
+    sharedState.currentSegment.parts.push(part);
+  }
+}
+
+export class ExtXSkip extends TagWithAttributesProcessor {
+  private static readonly SKIPPED_SEGMENTS = 'SKIPPED-SEGMENTS';
+  private static readonly RECENTLY_REMOVED_DATERANGES = 'RECENTLY-REMOVED-DATERANGES';
+
+  protected requiredAttributes = new Set([ExtXSkip.SKIPPED_SEGMENTS]);
+  protected readonly tag = EXT_X_SKIP;
+
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist): void {
+    playlist.skip = {
+      skippedSegments: Number(tagAttributes[ExtXSkip.SKIPPED_SEGMENTS]),
+      recentlyRemovedDateranges: tagAttributes[ExtXSkip.RECENTLY_REMOVED_DATERANGES].split('\t')
+    };
   }
 }
 
@@ -241,17 +271,189 @@ export class ExtXMedia extends TagWithAttributesProcessor {
   }
 }
 
-export class ExtXSkip extends TagWithAttributesProcessor {
-  private static readonly SKIPPED_SEGMENTS = 'SKIPPED-SEGMENTS';
-  private static readonly RECENTLY_REMOVED_DATERANGES = 'RECENTLY-REMOVED-DATERANGES';
+abstract class BaseStreamInfProcessor extends TagWithAttributesProcessor {
+  protected static readonly BANDWIDTH = 'BANDWIDTH';
+  protected static readonly AVERAGE_BANDWIDTH = 'AVERAGE-BANDWIDTH';
+  protected static readonly SCORE = 'SCORE';
+  protected static readonly CODECS = 'CODECS';
+  protected static readonly SUPPLEMENTAL_CODECS = 'SUPPLEMENTAL-CODECS';
+  protected static readonly RESOLUTION = 'RESOLUTION';
+  protected static readonly HDCP_LEVEL = 'HDCP-LEVEL';
+  protected static readonly ALLOWED_CPC = 'ALLOWED-CPC';
+  protected static readonly VIDEO_RANGE = 'VIDEO-RANGE';
+  protected static readonly STABLE_VARIANT_ID = 'STABLE-VARIANT-ID';
+  protected static readonly VIDEO = 'VIDEO';
+  protected static readonly PATHWAY_ID = 'PATHWAY-ID';
 
-  protected requiredAttributes = new Set([ExtXSkip.SKIPPED_SEGMENTS]);
-  protected readonly tag = EXT_X_SKIP;
+  protected parseResolution(value?: string): Resolution | undefined {
+    const parsedResolution = value ? value.split('x').map(Number) : [];
+  
+    if (parsedResolution.length === 2) {
+      return {
+        width: parsedResolution[0],
+        height: parsedResolution[1]
+      };
+    }
+  }
+
+  protected parseAllowedCpc(value?: string): AllowedCpc {
+    const parsedAllowedCpc = value ? value.split(',') : [];
+    const allowedCpc: AllowedCpc = [];
+
+    parsedAllowedCpc.forEach((entry) => {
+      const parsedEntry = entry.split(':');
+      const keyFormat = parsedEntry[0];
+      const cpcs = parsedEntry[1].split('/');
+
+      allowedCpc.push({ [keyFormat]: cpcs });
+    });
+
+    return allowedCpc;
+  }
+
+  protected parseCommonAttributes(tagAttributes: Record<string, string>): BaseStreamInf {
+    return {
+      uri: '',
+      bandwidth: Number(tagAttributes[BaseStreamInfProcessor.BANDWIDTH]),
+      averageBandwidth: tagAttributes[BaseStreamInfProcessor.AVERAGE_BANDWIDTH] ? Number(tagAttributes[BaseStreamInfProcessor.AVERAGE_BANDWIDTH]) : undefined,
+      score: tagAttributes[BaseStreamInfProcessor.SCORE] ? Number(tagAttributes[BaseStreamInfProcessor.SCORE]) : undefined,
+      codecs: tagAttributes[BaseStreamInfProcessor.CODECS] ? tagAttributes[BaseStreamInfProcessor.CODECS].split(',') : [],
+      supplementalCodecs: tagAttributes[BaseStreamInfProcessor.SUPPLEMENTAL_CODECS] ? tagAttributes[BaseStreamInfProcessor.SUPPLEMENTAL_CODECS].split(',') : [],
+      resolution: this.parseResolution(tagAttributes[BaseStreamInfProcessor.RESOLUTION]),
+      hdcpLevel: tagAttributes[BaseStreamInfProcessor.HDCP_LEVEL] as 'NONE' | 'TYPE-0' | 'TYPE-1' | undefined,
+      allowedCpc: this.parseAllowedCpc(tagAttributes[BaseStreamInfProcessor.ALLOWED_CPC]),
+      videoRange: tagAttributes[BaseStreamInfProcessor.VIDEO_RANGE] as 'SDR' | 'HLG' | 'PQ' | undefined,
+      stableVariantId: tagAttributes[BaseStreamInfProcessor.STABLE_VARIANT_ID],
+      video: tagAttributes[BaseStreamInfProcessor.VIDEO],
+      pathwayId: tagAttributes[BaseStreamInfProcessor.PATHWAY_ID]
+    };
+  }
+}
+
+export class ExtXStreamInf extends BaseStreamInfProcessor {
+  protected static readonly FRAME_RATE = 'FRAME-RATE';
+  protected static readonly AUDIO = 'AUDIO';
+  protected static readonly SUBTITLES = 'SUBTITLES';
+  protected static readonly CLOSED_CAPTIONS = 'CLOSED-CAPTIONS';
+
+  protected readonly requiredAttributes = new Set([BaseStreamInfProcessor.BANDWIDTH]);
+  protected readonly tag = EXT_X_STREAM_INF;
+
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, sharedState: SharedState): void {
+    const variantStream = {
+      ...this.parseCommonAttributes(tagAttributes),
+      frameRate: tagAttributes[ExtXStreamInf.FRAME_RATE] ? Number(tagAttributes[ExtXStreamInf.FRAME_RATE]) : undefined,
+      audio: tagAttributes[ExtXStreamInf.AUDIO],
+      subtitles: tagAttributes[ExtXStreamInf.SUBTITLES],
+      closedCaptions: tagAttributes[ExtXStreamInf.CLOSED_CAPTIONS]
+    };
+
+    Object.assign(sharedState.currentVariant, variantStream);
+    sharedState.isMultivariantPlaylist = true;
+  }
+}
+
+export class ExtXIFrameStreamInf extends BaseStreamInfProcessor {
+  protected static readonly URI = 'URI';
+
+  protected readonly requiredAttributes = new Set([BaseStreamInfProcessor.BANDWIDTH, ExtXIFrameStreamInf.URI]);
+  protected readonly tag = EXT_X_I_FRAME_STREAM_INF;
 
   protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist): void {
-    playlist.skip = {
-      skippedSegments: Number(tagAttributes[ExtXSkip.SKIPPED_SEGMENTS]),
-      recentlyRemovedDateranges: tagAttributes[ExtXSkip.RECENTLY_REMOVED_DATERANGES].split('\t')
+    const iFrameStreamInf: IFramePlaylist = {
+      ...this.parseCommonAttributes(tagAttributes),
+      uri: tagAttributes[ExtXIFrameStreamInf.URI]
     };
-  } 
+
+    if (!playlist.iFramePlaylists) {
+      playlist.iFramePlaylists = [];
+    }
+
+    playlist.iFramePlaylists.push(iFrameStreamInf);
+  }
+}
+
+export class ExtXDaterange extends TagWithAttributesProcessor {
+  private static readonly ID = 'ID';
+  private static readonly CLASS = 'CLASS';
+  private static readonly START_DATE = 'START-DATE';
+  private static readonly CUE = 'CUE';
+  private static readonly END_DATE = 'END-DATE';
+  private static readonly DURATION = 'DURATION';
+  private static readonly PLANNED_DURATION = 'PLANNED-DURATION';
+  // Client attributes look like X-<client-attribute>, example: X-COM-EXAMPLE-AD-ID="XYZ123" 
+  private static readonly CLIENT_ATTRIBUTES = 'X-';
+  private static readonly SCTE35_CMD = 'SCTE35-CMD';
+  private static readonly SCTE35_OUT = 'SCTE35-OUT';
+  private static readonly SCTE35_IN = 'SCTE35-IN';
+  private static readonly END_ON_NEXT = 'END-ON-NEXT';
+
+  protected requiredAttributes = new Set([ExtXDaterange.ID, ExtXDaterange.START_DATE]);
+  protected tag = EXT_X_DATERANGE;
+
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist): void {
+    const dateRange: DateRange = {
+      id: tagAttributes[ExtXDaterange.ID],
+      class: tagAttributes[ExtXDaterange.CLASS],
+      startDate: tagAttributes[ExtXDaterange.START_DATE],
+      cue: tagAttributes[ExtXDaterange.CUE].split(',') as Cue[],
+      endDate: tagAttributes[ExtXDaterange.END_DATE],
+      duration: Number(tagAttributes[ExtXDaterange.DURATION]),
+      plannedDuration: Number(tagAttributes[ExtXDaterange.PLANNED_DURATION]),
+      scte35Cmd: Number(tagAttributes[ExtXDaterange.SCTE35_CMD]),
+      scte35Out: Number(tagAttributes[ExtXDaterange.SCTE35_OUT]),
+      scte35In: Number(tagAttributes[ExtXDaterange.SCTE35_IN]),
+      endOnNext: parseBoolean(tagAttributes[ExtXDaterange.END_ON_NEXT], false),
+      clientAttributes: {}
+    }
+
+    Object
+      .keys(tagAttributes)
+      .filter((tagKey) => tagKey.startsWith(ExtXDaterange.CLIENT_ATTRIBUTES))
+      .reduce((clientAttributes, tagKey) => { 
+        clientAttributes[tagKey] = tagAttributes[tagKey];
+        return clientAttributes;
+      }, dateRange.clientAttributes);
+
+    playlist.dateRanges.push(dateRange);
+  }
+}
+
+export class ExtXPreloadHint extends TagWithAttributesProcessor {
+  private static readonly TYPE = 'TYPE';
+  private static readonly URI = 'URI';
+  private static readonly BYTERANGE_START = 'BYTERANGE-START';
+  private static readonly BYTERANGE_LENGTH = 'BYTERANGE-LENGTH';
+  
+  protected requiredAttributes = new Set([ExtXPreloadHint.TYPE, ExtXPreloadHint.URI]);
+  protected tag = EXT_X_PRELOAD_HINT;
+
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist): void {
+    const preloadHint = {
+      type: tagAttributes[ExtXPreloadHint.TYPE] as HintType,
+      uri: tagAttributes[ExtXPreloadHint.URI],
+      byterangeStart: Number(tagAttributes[ExtXPreloadHint.BYTERANGE_START]),
+      byterangeLength: Number(tagAttributes[ExtXPreloadHint.BYTERANGE_LENGTH])
+    };
+
+    playlist.preloadHints.push(preloadHint);
+  }
+}
+
+export class ExtXRenditionReport extends TagWithAttributesProcessor {
+  private static readonly URI = 'URI';
+  private static readonly LAST_MSN = 'LAST-MSN';
+  private static readonly LAST_PART = 'LAST-PART';
+
+  protected requiredAttributes = new Set([]);
+  protected tag = EXT_X_RENDITION_REPORT;
+
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, sharedState: SharedState): void {
+    const renditionReport = {
+      uri: tagAttributes[ExtXRenditionReport.URI],
+      lastMsn: Number(tagAttributes[ExtXRenditionReport.LAST_MSN]),
+      lastPart: Number(tagAttributes[ExtXRenditionReport.LAST_PART])
+    };
+    playlist.renditionReports.push(renditionReport);
+  }
 }

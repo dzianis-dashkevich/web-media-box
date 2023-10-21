@@ -1,7 +1,7 @@
 type Callback<T> = (data: T) => void;
 
 export default class EventEmitter<M> {
-  private events: Map<keyof M, Set<Callback<unknown>>> = new Map();
+  private events = new Map<keyof M, Set<Callback<unknown>>>();
 
   public on<K extends keyof M>(event: K, callback: Callback<M[K]>): void {
     if (!this.events.has(event)) {

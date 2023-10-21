@@ -9,9 +9,15 @@ import {
   UTC_TIMING,
   EVENT_STREAM,
   EVENT,
-  SEGMENT_TEMPLATE
+  SEGMENT_TEMPLATE,
 } from '@/dash-parser/consts/tags.ts';
-import type { ManifestType, EventScheme, ParsedManifest, UTCTimingScheme, Segment } from '@/dash-parser/types/parsedManifest';
+import type {
+  ManifestType,
+  EventScheme,
+  ParsedManifest,
+  UTCTimingScheme,
+  Segment,
+} from '@/dash-parser/types/parsedManifest';
 import type { SharedState } from '@/dash-parser/types/sharedState';
 import type { PendingProcessors } from '@/dash-parser/pendingProcessors.ts';
 import { missingRequiredAttributeWarn } from '@/dash-parser/utils/warn.ts';
@@ -29,17 +35,19 @@ export abstract class TagProcessor {
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
     sharedState: SharedState,
-    pendingProcessors: PendingProcessors): void {
+    pendingProcessors: PendingProcessors
+  ): void {
     let isRequiredAttributedMissed = false;
 
-    this.requiredAttributes && this.requiredAttributes.forEach((requiredAttribute) => {
-      const hasRequiredAttribute = requiredAttribute in tagInfo.tagAttributes;
+    this.requiredAttributes &&
+      this.requiredAttributes.forEach((requiredAttribute) => {
+        const hasRequiredAttribute = requiredAttribute in tagInfo.tagAttributes;
 
-      if (!hasRequiredAttribute) {
-        this.warnCallback(missingRequiredAttributeWarn(this.tag, requiredAttribute));
-        isRequiredAttributedMissed = true;
-      }
-    });
+        if (!hasRequiredAttribute) {
+          this.warnCallback(missingRequiredAttributeWarn(this.tag, requiredAttribute));
+          isRequiredAttributedMissed = true;
+        }
+      });
 
     if (isRequiredAttributedMissed) {
       return;
@@ -61,7 +69,8 @@ export abstract class TagProcessor {
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
     sharedState: SharedState,
-    pendingProcessors: PendingProcessors): void;
+    pendingProcessors: PendingProcessors
+  ): void;
 
   public constructor(warnCallback: WarnCallback) {
     this.warnCallback = warnCallback;
@@ -204,16 +213,17 @@ export class Representation extends TagProcessor {
     const previousAttributes = {
       ...sharedState.mpdAttributes,
       ...sharedState.periodAttributes,
-      ...sharedState.adaptationSetAttributes
-    }
+      ...sharedState.adaptationSetAttributes,
+    };
 
     let segments: Array<Segment> = [];
     // TODO: we may want to ensure we are not waiting on any more nodes to process here as well.
     if (sharedState.segmentTemplateAttributes) {
-      segments = segmentsFromTemplate(
-        sharedState.mpdAttributes.type as string,
-        {...previousAttributes, ...attributes, ...sharedState.segmentTemplateAttributes}
-      )
+      segments = segmentsFromTemplate(sharedState.mpdAttributes.type as string, {
+        ...previousAttributes,
+        ...attributes,
+        ...sharedState.segmentTemplateAttributes,
+      });
     }
 
     const rep = {
@@ -240,8 +250,8 @@ export class Representation extends TagProcessor {
       codingDependency: attributes[Representation.CODING_DEPENDENCY],
       selectionPriority: attributes[Representation.SELECTION_PRIORITY],
       tag: attributes[Representation.TAG],
-      segments
-    }
+      segments,
+    };
 
     parsedManifest.representations.push(rep);
   }
@@ -273,8 +283,8 @@ export class SegmentTemplate extends TagProcessor {
       bitstreamSwitching: attributes[SegmentTemplate.BIT_STREAM_SWITCHING],
       duration: attributes[SegmentTemplate.DURATION],
       timescale: attributes[SegmentTemplate.TIME_SCALE],
-      startNumber: attributes[SEGMENT_TEMPLATE.START_NUMBER]
-    }
+      startNumber: attributes[SEGMENT_TEMPLATE.START_NUMBER],
+    };
   }
 }
 
@@ -309,9 +319,7 @@ export class EventStream extends TagProcessor {
     parsedManifest: ParsedManifest,
     sharedState: SharedState,
     pendingProcessors: PendingProcessors
-  ): void {
-    
-  }
+  ): void {}
 }
 
 export class Event extends TagProcessor {
@@ -336,7 +344,7 @@ export class Event extends TagProcessor {
     const presentationTime = 0;
     // const timescale = eventStreamAttributes.timescale || 1;
     const timescale = 1;
-    const duration = attributes.duration as number || 0;
+    const duration = (attributes.duration as number) || 0;
     // const start = (presentationTime / timescale) + period.attributes.start;
     const start = 0;
 
@@ -345,9 +353,9 @@ export class Event extends TagProcessor {
       // value: eventStreamAttributes.value,
       id: attributes.id,
       start,
-      end: start + (duration / timescale),
+      end: start + duration / timescale,
       // messageData: getContent(event) || eventAttributes.messageData,
-      messageData: attributes.messageData
+      messageData: attributes.messageData,
       // contentEncoding: eventStreamAttributes.contentEncoding,
       // presentationTimeOffset: eventStreamAttributes.presentationTimeOffset || 0
     };
@@ -355,5 +363,3 @@ export class Event extends TagProcessor {
     parsedManifest.events.push(event as EventScheme);
   }
 }
-
-

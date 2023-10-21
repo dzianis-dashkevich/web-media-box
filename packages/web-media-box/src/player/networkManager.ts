@@ -41,8 +41,8 @@ interface NetworkRequestWithProgressiveResponse {
 }
 
 export default class NetworkManager {
-  private readonly requestInterceptors: Map<RequestType, Array<RequestInterceptor>> = new Map();
-  private readonly responseHandlers: Map<RequestType, Array<ResponseHandler>> = new Map();
+  private readonly requestInterceptors = new Map<RequestType, Array<RequestInterceptor>>();
+  private readonly responseHandlers = new Map<RequestType, Array<ResponseHandler>>();
 
   private readonly logger: Logger;
 
@@ -176,7 +176,7 @@ export default class NetworkManager {
   ): NetworkRequestWithFullResponse<T> {
     const { abort, headersReceived } = this.createNetworkRequest(uri, type, requestInit, retryOptions, timeout);
 
-    const chunks: Uint8Array[] = [];
+    const chunks: Array<Uint8Array> = [];
 
     const done = headersReceived
       .then((response) => {

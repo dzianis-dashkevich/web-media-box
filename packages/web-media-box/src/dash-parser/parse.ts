@@ -7,7 +7,7 @@ import type {
   TransformTagValue,
 } from '@/dash-parser/types/parserOptions';
 import { noop } from '../utils/fn.ts';
-import { ParsedManifest } from '@/dash-parser/types/parsedManifest';
+import type { ParsedManifest } from '@/dash-parser/types/parsedManifest';
 import type { TagProcessor } from '@/dash-parser/tags/base.ts';
 import {
   ADAPTATION_SET,
@@ -18,20 +18,13 @@ import {
   SEGMENT_TEMPLATE,
   EVENT_STREAM,
   EVENT,
-  BASE_URL
+  BASE_URL,
 } from '@/dash-parser/consts/tags.ts';
-import {
-  AdaptationSet,
-  Mpd,
-  Period,
-  Representation,
-  UTCTiming,
-  SegmentTemplate
-} from '@/dash-parser/tags/base.ts';
-import { TagInfo } from '@/dash-parser/stateMachine.ts';
+import { AdaptationSet, Mpd, Period, Representation, UTCTiming, SegmentTemplate } from '@/dash-parser/tags/base.ts';
+import type { TagInfo } from '@/dash-parser/stateMachine.ts';
 import { ignoreTagWarn, unsupportedTagWarn } from '@/dash-parser/utils/warn.ts';
 import createStateMachine from '@/dash-parser/stateMachine.ts';
-import { StateMachineTransition } from '@/dash-parser/stateMachine.ts';
+import type { StateMachineTransition } from '@/dash-parser/stateMachine.ts';
 import { PendingProcessors } from '@/dash-parser/pendingProcessors.ts';
 import type { SharedState } from '@/dash-parser/types/sharedState';
 
@@ -65,7 +58,7 @@ class Parser {
 
     this.sharedState = {
       mpdAttributes: {},
-      adaptationSetAttributes: {}
+      adaptationSetAttributes: {},
     };
 
     this.pendingProcessors = new PendingProcessors();
@@ -76,7 +69,7 @@ class Parser {
       [ADAPTATION_SET]: new AdaptationSet(this.warnCallback),
       [REPRESENTATION]: new Representation(this.warnCallback),
       [UTC_TIMING]: new UTCTiming(this.warnCallback),
-      [SEGMENT_TEMPLATE]: new SegmentTemplate(this.warnCallback)
+      [SEGMENT_TEMPLATE]: new SegmentTemplate(this.warnCallback),
     };
   }
 

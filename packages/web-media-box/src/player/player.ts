@@ -6,7 +6,7 @@ import EventEmitter from '../utils/eventEmitter.ts';
 
 import { Events, EnterPictureInPictureModeEvent, LeavePictureInPictureModeEvent, ErrorEvent } from './events.ts';
 import type { EventToTypeMap } from './events.ts';
-import Pipeline from '@/pipelines/basePipeline.ts';
+import type Pipeline from '@/pipelines/basePipeline.ts';
 import NativePipeline from '@/pipelines/native/nativePipeline.ts';
 import { NoSupportedPipelineError } from '@/player/errors.ts';
 
@@ -39,7 +39,7 @@ interface PlayerVideoTrack {}
 interface PlayerStats {}
 
 export default class Player {
-  private static readonly pipelinesMap: Map<string, Pipeline> = new Map();
+  private static readonly pipelinesMap = new Map<string, Pipeline>();
 
   public static readonly Events = Events;
 

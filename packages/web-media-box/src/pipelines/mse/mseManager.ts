@@ -1,11 +1,11 @@
-import type Logger from "@/utils/logger";
-import { OperationType, type SourceBufferWrapper } from "./types/bufferOperation";
+import type Logger from '@/utils/logger';
+import { OperationType, type SourceBufferWrapper } from './types/bufferOperation';
 
 export default class MseManager {
   private readonly logger: Logger;
   //TODO: ManagedMediaSource
   private readonly mediaSource: MediaSource = new MediaSource();
-  private readonly sourceBuffers: Map<string, SourceBufferWrapper> = new Map();
+  private readonly sourceBuffers = new Map<string, SourceBufferWrapper>();
   private readonly sourceOpen: Promise<void> = this.initMediaSource();
   private readonly srcURL: string = URL.createObjectURL(this.mediaSource);
 
@@ -93,7 +93,7 @@ export default class MseManager {
       const bufferOperation = bufferWrapper.queue.shift();
       if (bufferOperation) {
         bufferOperation.operation().then(() => {
-            this.processQueue(bufferWrapper);
+          this.processQueue(bufferWrapper);
         });
       }
     }

@@ -31,7 +31,7 @@ export default class Logger {
     return this.level;
   }
 
-  public debug(...args: unknown[]): void {
+  public debug(...args: Array<unknown>): void {
     if (this.level > LoggerLevel.DEBUG) {
       return;
     }
@@ -39,7 +39,7 @@ export default class Logger {
     this.console.debug(this.label, style, ...args);
   }
 
-  public info(...args: unknown[]): void {
+  public info(...args: Array<unknown>): void {
     if (this.level > LoggerLevel.INFO) {
       return;
     }
@@ -47,7 +47,7 @@ export default class Logger {
     this.console.info(this.label, style, ...args);
   }
 
-  public warn(...args: unknown[]): void {
+  public warn(...args: Array<unknown>): void {
     if (this.level > LoggerLevel.WARN) {
       return;
     }
@@ -55,7 +55,7 @@ export default class Logger {
     this.console.warn(this.label, style, ...args);
   }
 
-  public error(...args: unknown[]): void {
+  public error(...args: Array<unknown>): void {
     if (this.level > LoggerLevel.ERROR) {
       return;
     }

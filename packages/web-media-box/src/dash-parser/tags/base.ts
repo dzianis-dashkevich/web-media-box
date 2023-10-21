@@ -12,7 +12,7 @@ import {
   SEGMENT_TEMPLATE,
 } from '@/dash-parser/consts/tags.ts';
 import type {
-  ManifestType,
+  // ManifestType,
   EventScheme,
   ParsedManifest,
   UTCTimingScheme,
@@ -56,11 +56,10 @@ export abstract class TagProcessor {
     return this.safeProcess(tagInfo, parentTagInfo, parsedManifest, sharedState, pendingProcessors);
   }
 
-  public processPending(
-    tagInfo: TagInfo,
-    parentTagInfo: TagInfo | null,
-    requiredChildren: Map<string, TagInfo | null>
-  ): void {
+  public processPending() // tagInfo: TagInfo,
+  // parentTagInfo: TagInfo | null,
+  // requiredChildren: Map<string, TagInfo | null>
+  : void {
     // specific processor will override
   }
 
@@ -93,8 +92,8 @@ export class Mpd extends TagProcessor {
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
-    sharedState: SharedState,
-    pendingProcessors: PendingProcessors
+    sharedState: SharedState
+    // pendingProcessors: PendingProcessors
   ): void {
     const attributes = parseAttributes(tagInfo.tagAttributes);
     sharedState.mpdAttributes = {
@@ -115,12 +114,12 @@ export class Period extends TagProcessor {
 
   protected readonly tag = PERIOD;
 
-  safeProcess(
+  protected safeProcess(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
-    sharedState: SharedState,
-    pendingProcessors: PendingProcessors
+    sharedState: SharedState
+    // pendingProcessors: PendingProcessors
   ): void {
     const attributes = parseAttributes(tagInfo.tagAttributes);
     sharedState.periodAttributes = {
@@ -139,12 +138,12 @@ export class AdaptationSet extends TagProcessor {
   protected readonly requiredAttributes = new Set([AdaptationSet.MIME_TYPE, AdaptationSet.CONTENT_TYPE]);
   protected readonly tag = ADAPTATION_SET;
 
-  safeProcess(
+  protected safeProcess(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
-    sharedState: SharedState,
-    pendingProcessors: PendingProcessors
+    sharedState: SharedState
+    // pendingProcessors: PendingProcessors
   ): void {
     const attributes = parseAttributes(tagInfo.tagAttributes);
     sharedState.adaptationSetAttributes = {
@@ -159,13 +158,12 @@ export class BaseUrl extends TagProcessor {
   // TODO
   protected readonly tag = BASE_URL;
 
-  safeProcess(
-    tagInfo: TagInfo,
-    parentTagInfo: TagInfo | null,
-    parsedManifest: ParsedManifest,
-    sharedState: SharedState,
-    pendingProcessors: PendingProcessors
-  ): void {}
+  protected safeProcess() // tagInfo: TagInfo,
+  // parentTagInfo: TagInfo | null,
+  // parsedManifest: ParsedManifest,
+  // sharedState: SharedState,
+  // pendingProcessors: PendingProcessors
+  : void {}
 }
 
 export class Representation extends TagProcessor {
@@ -192,12 +190,12 @@ export class Representation extends TagProcessor {
 
   protected readonly tag = REPRESENTATION;
 
-  safeProcess(
+  protected safeProcess(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
-    sharedState: SharedState,
-    pendingProcessors: PendingProcessors
+    sharedState: SharedState
+    // pendingProcessors: PendingProcessors
   ): void {
     // TODO: Once parent info is passed in, we can check this.
 
@@ -207,7 +205,7 @@ export class Representation extends TagProcessor {
     // }
 
     // TODO: Set pending processors
-    pendingProcessors = [];
+    // pendingProcessors = [];
 
     const attributes = parseAttributes(tagInfo.tagAttributes);
     const previousAttributes = {
@@ -268,12 +266,12 @@ export class SegmentTemplate extends TagProcessor {
 
   protected readonly tag = SEGMENT_TEMPLATE;
 
-  safeProcess(
+  protected safeProcess(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
     parsedManifest: ParsedManifest,
-    sharedState: SharedState,
-    pendingProcessors: PendingProcessors
+    sharedState: SharedState
+    // pendingProcessors: PendingProcessors
   ): void {
     const attributes = parseAttributes(tagInfo.tagAttributes);
     sharedState.segmentTemplateAttributes = {
@@ -294,12 +292,12 @@ export class UTCTiming extends TagProcessor {
   protected readonly requiredAttributes = new Set([UTCTiming.SCHEME_ID_URI]);
   protected readonly tag = UTC_TIMING;
 
-  safeProcess(
+  protected safeProcess(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
-    parsedManifest: ParsedManifest,
-    sharedState: SharedState,
-    pendingProcessors: PendingProcessors
+    parsedManifest: ParsedManifest
+    // sharedState: SharedState,
+    // pendingProcessors: PendingProcessors
   ): void {
     const attributes = parseAttributes(tagInfo.tagAttributes);
 
@@ -313,24 +311,23 @@ export class EventStream extends TagProcessor {
   // TODO
   protected readonly tag = EVENT_STREAM;
 
-  safeProcess(
-    tagInfo: TagInfo,
-    parentTagInfo: TagInfo | null,
-    parsedManifest: ParsedManifest,
-    sharedState: SharedState,
-    pendingProcessors: PendingProcessors
-  ): void {}
+  protected safeProcess() // tagInfo: TagInfo,
+  // parentTagInfo: TagInfo | null,
+  // parsedManifest: ParsedManifest,
+  // sharedState: SharedState,
+  // pendingProcessors: PendingProcessors
+  : void {}
 }
 
 export class Event extends TagProcessor {
   protected readonly tag = EVENT;
 
-  safeProcess(
+  protected safeProcess(
     tagInfo: TagInfo,
     parentTagInfo: TagInfo | null,
-    parsedManifest: ParsedManifest,
-    sharedState: SharedState,
-    pendingProcessors: PendingProcessors
+    parsedManifest: ParsedManifest
+    // sharedState: SharedState
+    // pendingProcessors: PendingProcessors
   ): void {
     const attributes = parseAttributes(tagInfo.tagAttributes);
 
@@ -341,7 +338,7 @@ export class Event extends TagProcessor {
     // TODO: use data from state to finish this.
 
     // const presentationTime = attributes.presentationTime || 0;
-    const presentationTime = 0;
+    // const presentationTime = 0;
     // const timescale = eventStreamAttributes.timescale || 1;
     const timescale = 1;
     const duration = (attributes.duration as number) || 0;

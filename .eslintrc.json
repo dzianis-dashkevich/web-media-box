@@ -19,7 +19,6 @@
     "@typescript-eslint/consistent-indexed-object-style": "error",
     "@typescript-eslint/consistent-type-imports": "error",
     "@typescript-eslint/explicit-module-boundary-types": "error",
-    "@typescript-eslint/naming-convention": "error",
     "@typescript-eslint/no-base-to-string": "error",
     "@typescript-eslint/prefer-function-type": "error"
   },

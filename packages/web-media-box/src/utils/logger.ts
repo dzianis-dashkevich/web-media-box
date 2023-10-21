@@ -1,9 +1,9 @@
 export enum LoggerLevel {
-  DEBUG,
-  INFO,
-  WARN,
-  ERROR,
-  OFF,
+  Debug,
+  Info,
+  Warn,
+  Error,
+  Off,
 }
 
 const style = 'background: #333; padding: 3px; color: #bada55';

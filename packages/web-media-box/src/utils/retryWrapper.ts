@@ -27,7 +27,7 @@ class MaxAttemptsExceeded extends Error {
   }
 }
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default class RetryWrapper {
   private readonly maxAttempts: number;
@@ -44,7 +44,7 @@ export default class RetryWrapper {
 
   public wrap<T>(
     fn: (...args: Array<unknown>) => Promise<T>,
-    shouldRetry: (error: unknown) => boolean = () => true,
+    shouldRetry: (error: unknown) => boolean = (): boolean => true,
     hooks: RetryWrapperHooks = {},
     waitFn = wait
   ): WrappedWithRetry<T> {

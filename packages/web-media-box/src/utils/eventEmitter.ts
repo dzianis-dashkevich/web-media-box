@@ -29,7 +29,7 @@ export default class EventEmitter<M> {
   }
 
   public once<K extends keyof M>(event: K, callback: Callback<M[K]>): void {
-    const onceCallback = (data: M[K]) => {
+    const onceCallback = (data: M[K]): void => {
       this.off(event, onceCallback);
       callback(data);
     };

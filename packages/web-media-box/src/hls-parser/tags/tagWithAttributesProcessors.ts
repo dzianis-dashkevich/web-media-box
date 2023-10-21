@@ -485,11 +485,7 @@ export class ExtXRenditionReport extends TagWithAttributesProcessor {
   protected requiredAttributes = new Set([]);
   protected tag = EXT_X_RENDITION_REPORT;
 
-  protected safeProcess(
-    tagAttributes: Record<string, string>,
-    playlist: ParsedPlaylist,
-    sharedState: SharedState
-  ): void {
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist): void {
     const renditionReport = {
       uri: tagAttributes[ExtXRenditionReport.URI],
       lastMsn: Number(tagAttributes[ExtXRenditionReport.LAST_MSN]),

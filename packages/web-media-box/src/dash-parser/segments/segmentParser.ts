@@ -131,7 +131,7 @@ export const segmentRanges: SegmentRanges = {
    * @param attributes Inheritied MPD attributes
    * @return The start and end numbers for available segments
    */
-  dynamic(attributes: Record<string, unknown>): { start: number; end: number } {
+  dynamic(): { start: number; end: number } {
     // const {
     //   NOW,
     //   clientOffset,

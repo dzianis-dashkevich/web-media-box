@@ -16,9 +16,9 @@ import {
   REPRESENTATION,
   UTC_TIMING,
   SEGMENT_TEMPLATE,
-  EVENT_STREAM,
-  EVENT,
-  BASE_URL,
+  // EVENT_STREAM,
+  // EVENT,
+  // BASE_URL,
 } from '@/dash-parser/consts/tags.ts';
 import { AdaptationSet, Mpd, Period, Representation, UTCTiming, SegmentTemplate } from '@/dash-parser/tags/base.ts';
 import type { TagInfo } from '@/dash-parser/stateMachine.ts';

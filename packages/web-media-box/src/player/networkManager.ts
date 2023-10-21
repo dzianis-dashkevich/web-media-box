@@ -236,7 +236,7 @@ export default class NetworkManager {
     };
   }
 
-  private applyResponseHandlers(type: RequestType, response: Response) {
+  private applyResponseHandlers(type: RequestType, response: Response): void {
     const responseHandlers = this.responseHandlers.get(type);
 
     if (responseHandlers) {
@@ -280,12 +280,12 @@ export default class NetworkManager {
         abortController.abort();
       }, timeout);
 
-      const onResponse = (response: Response) => {
+      const onResponse = (response: Response): void => {
         clearTimeout(timeoutId);
         response.ok ? resolve(response) : reject(new BadStatusNetworkError(response));
       };
 
-      const onError = (fetchError: DOMException | TypeError) => {
+      const onError = (fetchError: DOMException | TypeError): void => {
         clearTimeout(timeoutId);
 
         if (this.isAbortError(fetchError)) {

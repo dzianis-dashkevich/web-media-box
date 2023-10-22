@@ -503,19 +503,19 @@ export class ExtXSessionData extends TagWithAttributesProcessor {
   private static readonly URI = 'URI';
   private static readonly FORMAT = 'FORMAT';
   private static readonly LANGUAGE = 'LANGUAGE';
- 
+
   protected requiredAttributes = new Set([ExtXSessionData.DATA_ID]);
   protected tag = EXT_X_SESSION_DATA;
 
-  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist, sharedState: SharedState): void {
+  protected safeProcess(tagAttributes: Record<string, string>, playlist: ParsedPlaylist): void {
     const sessionData = {
       dataId: tagAttributes[ExtXSessionData.DATA_ID],
       value: tagAttributes[ExtXSessionData.VALUE],
       uri: tagAttributes[ExtXSessionData.URI],
       format: tagAttributes[ExtXSessionData.FORMAT] as 'JSON' | 'RAW' | undefined,
-      language: tagAttributes[ExtXSessionData.LANGUAGE]
+      language: tagAttributes[ExtXSessionData.LANGUAGE],
     };
 
-    playlist.sessionDataTags.push(sessionData)
+    playlist.sessionDataTags.push(sessionData);
   }
 }

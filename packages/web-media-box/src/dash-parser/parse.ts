@@ -105,7 +105,7 @@ class Parser {
 }
 
 export class FullManifestParser extends Parser {
-  public parseFullPlaylist(playlist: string): ParsedManifest {
+  public parseFullPlaylistString(playlist: string): ParsedManifest {
     const stateMachine = createStateMachine(this.tagInfoCallback);
     const length = playlist.length;
 
@@ -115,12 +115,33 @@ export class FullManifestParser extends Parser {
 
     return this.parsedManifest;
   }
+
+  public parseFullPlaylistBuffer(playlist: Uint8Array): ParsedManifest {
+    const stateMachine = createStateMachine(this.tagInfoCallback);
+    const length = playlist.length;
+
+    for (let i = 0; i < length; i++) {
+      stateMachine(String.fromCharCode(playlist[i]));
+    }
+
+    return this.parsedManifest;
+  }
 }
 
 export class ProgressiveParser extends Parser {
   private stateMachine: StateMachineTransition | null = null;
 
-  public push(chunk: Uint8Array): void {
+  public pushString(chunk: string): void {
+    if (this.stateMachine === null) {
+      this.stateMachine = createStateMachine(this.tagInfoCallback);
+    }
+
+    for (let i = 0; i < chunk.length; i++) {
+      this.stateMachine(chunk[i]);
+    }
+  }
+
+  public pushBuffer(chunk: Uint8Array): void {
     if (this.stateMachine === null) {
       this.stateMachine = createStateMachine(this.tagInfoCallback);
     }

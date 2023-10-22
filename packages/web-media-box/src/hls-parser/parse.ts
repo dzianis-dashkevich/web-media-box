@@ -92,6 +92,26 @@ const defaultVariantStream: VariantStream = {
   uri: '',
 };
 
+const defaultParsedPlaylist: ParsedPlaylist = {
+  m3u: false,
+  independentSegments: false,
+  endList: false,
+  iFramesOnly: false,
+  segments: [],
+  custom: {},
+  renditionGroups: {
+    audio: {},
+    video: {},
+    subtitles: {},
+    closedCaptions: {},
+  },
+  variantStreams: [],
+  iFramePlaylists: [],
+  dateRanges: [],
+  preloadHints: [],
+  renditionReports: [],
+};
+
 class Parser {
   private readonly warnCallback: WarnCallback;
   private readonly debugCallback: DebugCallback;
@@ -103,7 +123,7 @@ class Parser {
   private readonly tagValueMap: Record<string, TagWithValueProcessor>;
   private readonly tagAttributesMap: Record<string, TagWithAttributesProcessor>;
 
-  protected readonly parsedPlaylist: ParsedPlaylist;
+  protected parsedPlaylist: ParsedPlaylist;
   protected sharedState: SharedState;
 
   public constructor(options: ParserOptions) {
@@ -115,25 +135,7 @@ class Parser {
     this.transformTagAttributes =
       options.transformTagAttributes || ((tagKey, tagAttributes): Record<string, string> => tagAttributes);
 
-    this.parsedPlaylist = {
-      m3u: false,
-      independentSegments: false,
-      endList: false,
-      iFramesOnly: false,
-      segments: [],
-      custom: {},
-      renditionGroups: {
-        audio: {},
-        video: {},
-        subtitles: {},
-        closedCaptions: {},
-      },
-      variantStreams: [],
-      iFramePlaylists: [],
-      dateRanges: [],
-      preloadHints: [],
-      renditionReports: [],
-    };
+    this.parsedPlaylist = structuredClone(defaultParsedPlaylist);
 
     this.sharedState = {
       isMultivariantPlaylist: false,
@@ -262,10 +264,17 @@ class Parser {
     this.parsedPlaylist.segments.push(this.sharedState.currentSegment);
     this.sharedState.currentSegment = { ...defaultSegment };
   }
+
+  protected clean(): ParsedPlaylist {
+    const copy = { ...this.parsedPlaylist };
+    this.parsedPlaylist = structuredClone(defaultParsedPlaylist);
+
+    return copy;
+  }
 }
 
 export class FullPlaylistParser extends Parser {
-  public parseFullPlaylist(playlist: string): ParsedPlaylist {
+  public parseFullPlaylistString(playlist: string): ParsedPlaylist {
     const stateMachine = createStateMachine(this.tagInfoCallback, this.uriInfoCallback);
     const length = playlist.length;
 
@@ -273,14 +282,35 @@ export class FullPlaylistParser extends Parser {
       stateMachine(playlist[i]);
     }
 
-    return this.parsedPlaylist;
+    return this.clean();
+  }
+
+  public parseFullPlaylistBuffer(playlist: Uint8Array): ParsedPlaylist {
+    const stateMachine = createStateMachine(this.tagInfoCallback, this.uriInfoCallback);
+    const length = playlist.length;
+
+    for (let i = 0; i < length; i++) {
+      stateMachine(String.fromCharCode(playlist[i]));
+    }
+
+    return this.clean();
   }
 }
 
 export class ProgressiveParser extends Parser {
   private stateMachine: StateMachineTransition | null = null;
 
-  public push(chunk: Uint8Array): void {
+  public pushString(chunk: string): void {
+    if (this.stateMachine === null) {
+      this.stateMachine = createStateMachine(this.tagInfoCallback, this.uriInfoCallback);
+    }
+
+    for (let i = 0; i < chunk.length; i++) {
+      this.stateMachine(chunk[i]);
+    }
+  }
+
+  public pushBuffer(chunk: Uint8Array): void {
     if (this.stateMachine === null) {
       this.stateMachine = createStateMachine(this.tagInfoCallback, this.uriInfoCallback);
     }
@@ -293,6 +323,6 @@ export class ProgressiveParser extends Parser {
   public done(): ParsedPlaylist {
     this.stateMachine = null;
 
-    return this.parsedPlaylist;
+    return this.clean();
   }
 }

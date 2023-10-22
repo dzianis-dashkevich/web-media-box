@@ -259,3 +259,49 @@ window.dashProgressiveParser = dashProgressiveParser;
 //   () => console.log('Parsed Hls Playlist: ', hlsProgressiveParser.done()),
 //   (networkManagerError) => console.error('Error: ', networkManagerError)
 // );
+
+// 3.1 Dash State Machine Diagram
+
+// Show state machine diagram
+// you can say that we use state machine approach to support progressive parsing for dash,
+// and because it is pretty challenging most of the player uses DomParser().parseFromString()
+// but it requires full response to be loaded
+
+// 3.2 Dash full parser Demo
+
+// const net = player.getNetworkManager();
+
+// const url = 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd';
+// const requestType = Player.RequestType.DashManifest;
+// const requestInit = {};
+// const retryOptions = { maxAttempts: 3, delay: 2_000, delayFactor: 0.5, fuzzFactor: 0.1 };
+// const timeout = 20_000;
+// const responseMapper = (buffer) => buffer;
+//
+// const { done, abort } = net.get(url, requestType, requestInit, retryOptions, timeout, responseMapper);
+//
+// done.then(
+//   (responseData) => console.log('Parsed Dash Manifest: ', dashFullParser.parseFullManifestBuffer(responseData)),
+//   (networkManagerError) => console.error('Error: ', networkManagerError)
+// );
+
+// 3.3 Dash Progressive parser Demo
+
+// const net = player.getNetworkManager();
+
+// const url = 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd';
+// const requestType = Player.RequestType.DashManifest;
+// const requestInit = {};
+// const retryOptions = { maxAttempts: 3, delay: 2_000, delayFactor: 0.5, fuzzFactor: 0.1 };
+// const timeout = 20_000;
+// const chunkHandler = (buffer) => {
+//   console.log('parse chunk: ', buffer);
+//   dashProgressiveParser.pushBuffer(buffer);
+// };
+//
+// const { done, abort } = net.getProgressive(url, requestType, requestInit, retryOptions, timeout, chunkHandler);
+//
+// done.then(
+//   () => console.log('Parsed Dash Manifest: ', dashProgressiveParser.done()),
+//   (networkManagerError) => console.error('Error: ', networkManagerError)
+// );

@@ -84,7 +84,12 @@ window.dashProgressiveParser = dashProgressiveParser;
  *
  */
 
-// 1.1 Async request interceptors and response handlers by request type (uncomment):
+// Copy each snippet, paste into console in index.html running on local server
+// uncomment this snippet in the console and run it
+// describe what is happening
+// PS: Refresh the page after before each snippet
+
+// 1.1 Async request interceptors and response handlers by request type:
 
 // console.log('1.1 Async Request Interceptors and Response Handlers by Request Type Demo:');
 //
@@ -140,9 +145,11 @@ window.dashProgressiveParser = dashProgressiveParser;
 //   (networkManagerError) => console.error('Error: ', networkManagerError)
 // );
 
-// 1.2 Progressive loading (uncomment and comment previous part):
+// 1.2 Progressive loading:
+// Highlight here, that we do not wait full HTTP response to be received
+// and emit chunk once part of the resopnse body is available via fetch response body readable stream
 
-// console.log('1.2 Async Request Interceptors and Response Handlers by Request Type Demo:');
+// console.log('1.2 Fetch progressive loading demo');
 //
 // const net = player.getNetworkManager();
 //
@@ -200,7 +207,9 @@ window.dashProgressiveParser = dashProgressiveParser;
 
 // 1.3 Backoff/Retry
 
-// You can simpy re-use previous snippet, but you need to block request url in the chrome dev-tools
+// You can simpy re-use previous snippet, just replace header logging to "1.3 Backoff/Retry demo"
+// you also need to block request url in the chrome dev-tools
+
 // in the network panel find this m3u8 request, right click it and select "Block request URL"
 // Once blocked, refresh the page and re-run the same snippet
 // You should see that Network manager will try to send request <MaxAttempts> times (you can show network panel or logs)
@@ -221,6 +230,7 @@ window.dashProgressiveParser = dashProgressiveParser;
 
 // 2.2 HlsFullParser Demo
 
+// console.log('2.2 hls full playlist parser demo');
 // const net = player.getNetworkManager();
 
 // const url = 'https://demo.unified-streaming.com/k8s/live/scte35.isml/scte35-audio_eng=64000-video=500000.m3u8';
@@ -241,6 +251,7 @@ window.dashProgressiveParser = dashProgressiveParser;
 // You can highlight here, that we do not wait for a full HTTP response,
 // we parse each packet that fetch api provides us via response body readable stream
 
+// console.log('2.3 hls progressinve playlist parser demo');
 // const net = player.getNetworkManager();
 
 // const url = 'https://demo.unified-streaming.com/k8s/live/scte35.isml/scte35-audio_eng=64000-video=500000.m3u8';
@@ -269,6 +280,7 @@ window.dashProgressiveParser = dashProgressiveParser;
 
 // 3.2 Dash full parser Demo
 
+// console.log('3.2 Dash full parser demo.');
 // const net = player.getNetworkManager();
 
 // const url = 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd';
@@ -287,6 +299,7 @@ window.dashProgressiveParser = dashProgressiveParser;
 
 // 3.3 Dash Progressive parser Demo
 
+// console.log('3.3 Dash progressive parser demo.');
 // const net = player.getNetworkManager();
 
 // const url = 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd';

@@ -84,9 +84,9 @@ window.dashProgressiveParser = dashProgressiveParser;
  *
  */
 
-// Copy each snippet, paste into console in index.html running on local server
-// uncomment this snippet in the console and run it
-// describe what is happening
+// Copy each snippet, paste into the console in the index.html running on your local server
+// uncomment this snippet in the console and run hit enter
+// describe what is happening in the console
 // PS: Refresh the page after before each snippet
 
 // 1.1 Async request interceptors and response handlers by request type:

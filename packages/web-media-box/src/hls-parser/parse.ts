@@ -86,6 +86,7 @@ import {
 
 const defaultSegment: Segment = {
   duration: 0,
+  mediaSequence: 0,
   isDiscontinuity: false,
   isGap: false,
   uri: '',
@@ -253,6 +254,10 @@ class Parser {
     const previousSegment = this.parsedPlaylist.segments[this.parsedPlaylist.segments.length - 1];
 
     this.sharedState.currentSegment.uri = uri;
+
+    if (previousSegment) {
+      this.sharedState.currentSegment.mediaSequence = previousSegment.mediaSequence + 1;
+    }
 
     // TODO: consider using shared private object instead of polluting parsed playlist object, since it is public interface
     // Apply the EXT-X-BITRATE value from previous segments to this segment as well,

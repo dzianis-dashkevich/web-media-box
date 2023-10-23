@@ -114,4 +114,91 @@ describe('hls-parser spec', () => {
       });
     });
   });
+
+  describe('#EXT-X-TARGETDURATION', () => {
+    it('should be undefined if it is not presented in playlist', () => {
+      const playlist = `#EXTM3U`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.targetDuration).toBeUndefined();
+      });
+    });
+
+    it('should parse value from playlist to a number', () => {
+      const playlist = `#EXTM3U\n#EXT-X-TARGETDURATION:5`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.targetDuration).toBe(5);
+      });
+    });
+
+    it('should not pare value from playlist if it is not possible to cast to number', () => {
+      const playlist = `#EXTM3U\n#EXT-X-TARGETDURATION:X`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.targetDuration).toBeUndefined();
+      });
+      expect(warnCallback).toHaveBeenCalledTimes(4);
+    });
+  });
+
+  describe('#EXT-X-MEDIA-SEQUENCE', () => {
+    it('should be undefined if it is not presented in playlist', () => {
+      const playlist = `#EXTM3U`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.mediaSequence).toBeUndefined();
+      });
+    });
+
+    it('should parse value from playlist to a number', () => {
+      const playlist = `#EXTM3U\n#EXT-X-MEDIA-SEQUENCE:10`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.mediaSequence).toBe(10);
+      });
+    });
+
+    it('should not pare value from playlist if it is not possible to cast to number', () => {
+      const playlist = `#EXTM3U\n#EXT-X-MEDIA-SEQUENCE:X`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.mediaSequence).toBeUndefined();
+      });
+      expect(warnCallback).toHaveBeenCalledTimes(4);
+    });
+
+    it('should be used as initial value for segments', () => {
+      const playlist = `#EXTM3U
+#EXT-X-MEDIA-SEQUENCE:2
+#EXTINF:9.9766,\t
+main.ts
+#EXTINF:9.9433,\t
+main.ts
+#EXTINF:10.01,\t
+main.ts`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.segments[0].mediaSequence).toBe(2);
+        expect(parsed.segments[1].mediaSequence).toBe(3);
+        expect(parsed.segments[2].mediaSequence).toBe(4);
+      });
+    });
+
+    it('Should set initial value as 0 if media sequence is not presented', () => {
+      const playlist = `#EXTM3U
+#EXTINF:9.9766,\t
+main.ts
+#EXTINF:9.9433,\t
+main.ts
+#EXTINF:10.01,\t
+main.ts`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.segments[0].mediaSequence).toBe(0);
+        expect(parsed.segments[1].mediaSequence).toBe(1);
+        expect(parsed.segments[2].mediaSequence).toBe(2);
+      });
+    });
+  });
 });

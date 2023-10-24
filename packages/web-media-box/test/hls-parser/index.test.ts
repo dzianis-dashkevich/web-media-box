@@ -339,4 +339,22 @@ main.ts
       expect(warnCallback).toHaveBeenCalledTimes(4);
     });
   });
+
+  describe('#EXT-X-I-FRAMES-ONLY', () => {
+    it('should be false by default', () => {
+      const playlist = `#EXTM3U`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.iFramesOnly).toBe(false);
+      });
+    });
+
+    it('should be parsed from a playlist', () => {
+      const playlist = `#EXTM3U\n#EXT-X-I-FRAMES-ONLY`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.iFramesOnly).toBe(true);
+      });
+    });
+  });
 });

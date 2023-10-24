@@ -275,4 +275,68 @@ main.ts`;
       });
     });
   });
+
+  describe('#EXT-X-ENDLIST', () => {
+    it('should be false by default', () => {
+      const playlist = `#EXTM3U`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.endList).toBe(false);
+      });
+    });
+
+    it('should be parsed from a playlist regardless of its location', () => {
+      const playlist = `#EXTM3U
+#EXT-X-ENDLIST
+#EXTINF:9.9766,\t
+main.ts
+#EXTINF:9.9433,\t
+main.ts
+#EXTINF:10.01,\t
+main.ts
+#EXT-X-DISCONTINUITY
+#EXTINF:10.01,\t
+main.ts
+#EXTINF:10.01,\t
+main.ts
+`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.endList).toBe(true);
+      });
+    });
+  });
+
+  describe('#EXT-X-PLAYLIST-TYPE', () => {
+    it('should be undefined by default', () => {
+      const playlist = `#EXTM3U`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.playlistType).toBeUndefined();
+      });
+    });
+
+    it('should be parsed from playlist', () => {
+      let playlist = `#EXTM3U\n#EXT-X-PLAYLIST-TYPE:EVENT`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.playlistType).toBe('EVENT');
+      });
+
+      playlist = `#EXTM3U\n#EXT-X-PLAYLIST-TYPE:VOD`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.playlistType).toBe('VOD');
+      });
+    });
+
+    it('should not be parsed from playlist if value is not an EVENT or VOD', () => {
+      const playlist = `#EXTM3U\n#EXT-X-PLAYLIST-TYPE:LIVE`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.playlistType).toBeUndefined();
+      });
+      expect(warnCallback).toHaveBeenCalledTimes(4);
+    });
+  });
 });

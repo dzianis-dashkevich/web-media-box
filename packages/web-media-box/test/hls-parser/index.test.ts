@@ -201,4 +201,78 @@ main.ts`;
       });
     });
   });
+
+  describe('#EXT-X-DISCONTINUITY-SEQUENCE', () => {
+    it('should be undefined if it is not presented in playlist', () => {
+      const playlist = `#EXTM3U`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.discontinuitySequence).toBeUndefined();
+      });
+    });
+
+    it('should parse value from playlist to a number', () => {
+      const playlist = `#EXTM3U\n#EXT-X-DISCONTINUITY-SEQUENCE:10`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.discontinuitySequence).toBe(10);
+      });
+    });
+
+    it('should not pare value from playlist if it is not possible to cast to number', () => {
+      const playlist = `#EXTM3U\n#EXT-X-DISCONTINUITY-SEQUENCE:X`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.discontinuitySequence).toBeUndefined();
+      });
+      expect(warnCallback).toHaveBeenCalledTimes(4);
+    });
+
+    it('should be used as initial value for segments', () => {
+      const playlist = `#EXTM3U
+#EXT-X-DISCONTINUITY-SEQUENCE:2
+#EXTINF:9.9766,\t
+main.ts
+#EXTINF:9.9433,\t
+main.ts
+#EXTINF:10.01,\t
+main.ts
+#EXT-X-DISCONTINUITY
+#EXTINF:10.01,\t
+main.ts
+#EXTINF:10.01,\t
+main.ts`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.segments[0].discontinuitySequence).toBe(2);
+        expect(parsed.segments[1].discontinuitySequence).toBe(2);
+        expect(parsed.segments[2].discontinuitySequence).toBe(2);
+        expect(parsed.segments[3].discontinuitySequence).toBe(3);
+        expect(parsed.segments[4].discontinuitySequence).toBe(3);
+      });
+    });
+
+    it('Should set initial value as 0 if media sequence is not presented', () => {
+      const playlist = `#EXTM3U
+#EXTINF:9.9766,\t
+main.ts
+#EXTINF:9.9433,\t
+main.ts
+#EXTINF:10.01,\t
+main.ts
+#EXT-X-DISCONTINUITY
+#EXTINF:10.01,\t
+main.ts
+#EXTINF:10.01,\t
+main.ts`;
+
+      testAllCombinations(playlist, (parsed) => {
+        expect(parsed.segments[0].discontinuitySequence).toBe(0);
+        expect(parsed.segments[1].discontinuitySequence).toBe(0);
+        expect(parsed.segments[2].discontinuitySequence).toBe(0);
+        expect(parsed.segments[3].discontinuitySequence).toBe(1);
+        expect(parsed.segments[4].discontinuitySequence).toBe(1);
+      });
+    });
+  });
 });
